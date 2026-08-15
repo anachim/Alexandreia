@@ -2,8 +2,8 @@
 
 Gestione di una piccola biblioteca: anagrafica libri, prestiti e rientri, metriche.
 
-Applicativo **offline**: nessun server, nessuna connessione. È un solo eseguibile che si mette in
-ascolto su `127.0.0.1` (porta scelta dal sistema), apre il browser e tiene i dati in un file SQLite.
+Applicativo **offline**: nessun server, nessuna connessione. Si mette in ascolto su `127.0.0.1`
+(porta scelta dal sistema), apre il browser e tiene i dati in un file SQLite.
 
 ## Avvio in sviluppo
 
@@ -17,17 +17,31 @@ dotnet run
 dotnet test tests
 ```
 
-## Distribuzione
+## Rilascio
 
-Un eseguibile autonomo, sulla macchina di destinazione non serve installare .NET:
+Il rilascio lo fa un **tag**, non un merge:
 
 ```
-dotnet publish -c Release -r win-x64   --self-contained -p:PublishSingleFile=true
-dotnet publish -c Release -r linux-x64 --self-contained -p:PublishSingleFile=true
-dotnet publish -c Release -r osx-arm64 --self-contained -p:PublishSingleFile=true
+git tag v1.0.0
+git push origin v1.0.0
 ```
 
-L'output finisce in `bin/Release/net10.0/<rid>/publish/`.
+La pipeline gira i test, compila per `win-x64`, `linux-x64` e `osx-arm64` e allega tre zip alla
+release su GitHub. Su ogni push e ogni PR gira invece la sola CI con i test.
+
+Per farlo a mano:
+
+```
+dotnet publish -c Release -r win-x64 --self-contained \
+  -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true
+```
+
+**Non è un file solo**: esce una cartella da ~102 MB con l'eseguibile, `wwwroot` e il manifest degli
+asset. Va copiata intera, ma è autonoma — sulla macchina di destinazione non serve installare .NET,
+e funziona anche spostandola altrove (verificato).
+
+Gli eseguibili non sono firmati: al primo avvio Windows mostrerà SmartScreen e macOS Gatekeeper li
+bloccherà. Se diventa un fastidio serve un certificato di code signing, non una modifica al codice.
 
 ## Dati
 
