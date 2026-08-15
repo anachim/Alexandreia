@@ -17,6 +17,23 @@ dotnet run
 dotnet test tests
 ```
 
+## Le schede
+
+**Libri** — elenco, ricerca, prestito. Chi ha un libro fuori si legge nella colonna, e il suo
+bottone «Presta» è spento.
+
+**Utenti** — cognome, nome, nota. Nella tendina del prestito la nota compare accanto al nome: con
+due omonimi è l'unica cosa che li distingue.
+
+**Prestiti** — filtrabile fra *Fuori adesso*, *Solo in ritardo*, *Già rientrati*, *Tutti*. I ritardi
+portano il timbro con i giorni.
+
+**Metriche** — lo stato di adesso, e i numeri di un periodo scelto fra sette intervalli pronti o due
+date qualsiasi. I prestiti del periodo si confrontano con la finestra precedente di pari durata.
+Le schede *Fuori adesso* e *In ritardo* si cliccano e portano all'elenco già filtrato.
+
+**Dati** — export e import, sotto.
+
 ## Come sono fatti i dati
 
 Un **libro** ha titolo, autore e una nota. Basta.

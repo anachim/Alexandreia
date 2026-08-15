@@ -191,7 +191,7 @@ public class UiTests : IDisposable
 
         Click(Labelled(w, "Rientrato"));
 
-        Assert.NotNull(_db.Loans(openOnly: false).Single().ReturnedAt);
+        Assert.NotNull(_db.Loans(Filtri.Tutti).Single().ReturnedAt);
         Assert.True(_db.Book(_libro)!.IsAvailable);
     }
 
@@ -209,7 +209,55 @@ public class UiTests : IDisposable
         // Se questo torna falso: i DataGridTextColumn legano in TwoWay e riscrivono
         // ReturnedAt a default(DateTime), che spegne IsOpen. Servono Mode=OneWay.
         Assert.True(loan.Overdue, $"DueAt={loan.DueAt:d} ReturnedAt={loan.ReturnedAt:o}");
-        Assert.Contains("in ritardo di 3 gg", loan.DueLabel);
+        Assert.Equal("3 GIORNI DI RITARDO", loan.LateLabel);
+
+        // Il timbro è visibile solo sulla riga in ritardo.
+        var timbro = Named<DataGrid>(view, "Grid").GetVisualDescendants().OfType<Border>()
+            .Single(b => b.Classes.Contains("stamp"));
+        Assert.True(timbro.IsVisible);
+    }
+
+    [AvaloniaFact]
+    public void Il_filtro_dei_prestiti_cambia_l_elenco()
+    {
+        var secondo = _db.SaveBook(new Book { Title = "Almagesto", Author = "Tolomeo" });
+        _db.Lend(_libro, _ipazia, DateTime.Today.AddDays(-3));   // in ritardo
+        _db.Lend(secondo, _ipazia, DateTime.Today.AddDays(10));  // regolare
+
+        var w = Open();
+        Tab(w, TabPrestiti);
+        var view = w.GetVisualDescendants().OfType<PrestitiView>().First();
+
+        Assert.Equal(2, Named<DataGrid>(view, "Grid").ItemsSource!.Cast<Loan>().Count());
+
+        view.Mostra(Filtri.Ritardo);
+        Settle();
+
+        Assert.Equal("Elementi", Assert.Single(Named<DataGrid>(view, "Grid").ItemsSource!.Cast<Loan>()).Title);
+        Assert.Equal("1 prestito", Named<TextBlock>(view, "Conteggio").Text);
+    }
+
+    [AvaloniaFact]
+    public void La_scheda_In_ritardo_porta_all_elenco_gia_filtrato()
+    {
+        _db.Lend(_libro, _ipazia, DateTime.Today.AddDays(-3));
+
+        var w = Open();
+        Tab(w, TabMetriche);
+
+        // La scheda numerica è cliccabile: un numero che non porta da nessuna parte
+        // costringe a rifare la ricerca a mano.
+        var card = Named<WrapPanel>(w, "Now").GetVisualDescendants().OfType<Border>()
+            .First(b => b.Classes.Contains("clickable")
+                        && b.GetVisualDescendants().OfType<TextBlock>().Any(t => t.Text == "In ritardo"));
+        card.RaiseEvent(new Avalonia.Input.PointerPressedEventArgs(
+            card, new Avalonia.Input.Pointer(0, Avalonia.Input.PointerType.Mouse, true),
+            card, default, 0, new Avalonia.Input.PointerPointProperties(), Avalonia.Input.KeyModifiers.None));
+        Settle();
+
+        Assert.Equal(TabPrestiti, Named<TabControl>(w, "Tabs").SelectedIndex);
+        var view = w.GetVisualDescendants().OfType<PrestitiView>().First();
+        Assert.Equal("Elementi", Assert.Single(Named<DataGrid>(view, "Grid").ItemsSource!.Cast<Loan>()).Title);
     }
 
     // --- Metriche -------------------------------------------------------
@@ -223,22 +271,50 @@ public class UiTests : IDisposable
         Tab(w, TabMetriche);
 
         var testi = w.GetVisualDescendants().OfType<TextBlock>().Select(t => t.Text).ToList();
-        Assert.Contains("Fuori ora", testi);
+        Assert.Contains("Fuori adesso", testi);
         Assert.Contains("Elementi", testi);
 
         // I numeri devono anche essere visibili: assegnare null a Foreground non lascia
         // il colore predefinito, lo azzera, e il numero sparisce senza errori.
-        var numeri = Named<WrapPanel>(w, "Cards").GetVisualDescendants()
-            .OfType<TextBlock>().Where(t => t.FontSize == 24).ToList();
-        Assert.Equal(8, numeri.Count);
+        var numeri = new[] { "Now", "Cards" }
+            .SelectMany(p => Named<WrapPanel>(w, p).GetVisualDescendants().OfType<TextBlock>())
+            .Where(t => t.FontSize == 26).ToList();
+        Assert.Equal(9, numeri.Count);
         Assert.All(numeri, n => Assert.NotNull(n.Foreground));
 
         // La media si conta dai mesi con movimento, non dai dodici del periodo: su un
         // archivio appena avviato un prestito nel primo mese è 1, non 0,1.
-        var media = w.GetVisualDescendants().OfType<TextBlock>()
-            .First(t => t.Text == "Media al mese").FindAncestorOfType<StackPanel>()!
-            .GetVisualDescendants().OfType<TextBlock>().First();
-        Assert.Equal("1", media.Text);
+        Assert.Equal("1", Valore(w, "Media al mese"));
+        Assert.Equal("1", Valore(w, "Fuori adesso"));
+    }
+
+    /// <summary>
+    /// Il numero grande dentro la scheda con quell'etichetta. Cercato dentro i pannelli
+    /// delle schede e non in tutta la finestra: «Prestiti» è anche il nome di una linguetta.
+    /// </summary>
+    static string? Valore(MainWindow w, string etichetta) =>
+        new[] { "Now", "Cards" }
+            .SelectMany(p => Named<WrapPanel>(w, p).GetVisualDescendants().OfType<StackPanel>())
+            .First(sp => sp.GetVisualDescendants().OfType<TextBlock>().Any(t => t.Text == etichetta))
+            .GetVisualDescendants().OfType<TextBlock>().First().Text;
+
+    [AvaloniaFact]
+    public void Il_periodo_delle_metriche_si_puo_restringere()
+    {
+        _db.Apply(Import.Plan([
+            new object?[] { "Titolo", "Prestato a", "Prestato il" },
+            new object?[] { "Vecchio", "Ipazia", DateTime.Today.AddMonths(-8) },
+            new object?[] { "Recente", "Ipazia", DateTime.Today.AddDays(-2) },
+        ]).Rows);
+
+        var w = Open();
+        Tab(w, TabMetriche);
+        Assert.Equal("2", Valore(w, "Prestiti")); // ultimi 12 mesi
+
+        Named<ComboBox>(w, "Period").SelectedIndex = 0; // ultimi 30 giorni
+        Settle();
+
+        Assert.Equal("1", Valore(w, "Prestiti"));
     }
 
     // --- Dati: import ----------------------------------------------------

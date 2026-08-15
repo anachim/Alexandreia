@@ -128,6 +128,28 @@ Il giro export → import è coperto da `Il_giro_completo_porta_anche_i_prestiti
 ClosedXML scrive, ExcelDataReader legge. Due librerie Excel di proposito: ClosedXML garantisce
 file che Excel apre davvero, ExcelDataReader è l'unico dei due che regge i vecchi `.xls`.
 
+## Aspetto
+
+Tutti i colori e gli stili stanno in `App.axaml`, in un blocco solo. Non mettere colori
+letterali nelle viste: usa `{DynamicResource ...}`.
+
+Il riferimento non è il libro antico ma **l'amministrazione della biblioteca** — registri,
+cartellini, e il timbro viola della data di restituzione, da cui viene l'accento `Stamp`. È una
+scelta presa per non finire nel crema + terracotta che è la risposta prevedibile per
+«biblioteca» (e dove ero finito alla prima passata).
+
+Il colore è informazione, non decorazione: viola = azione principale (`Button.primary`),
+vermiglio = ritardo o cancellazione (`Button.danger`, `Border.warning`, `Border.stamp`).
+
+`Border.stamp` è l'**elemento firma**: il badge ruotato del ritardo, nell'elenco prestiti. Sta in
+un posto solo apposta. Se serve enfasi altrove, non è quello il modo.
+
+Una sola famiglia di caratteri (Inter, già dentro Avalonia): la personalità viene da scala, peso e
+`LetterSpacing`. Aggiungere un file di font per decorare le linguette sarebbe peso senza funzione.
+
+I bottoni dentro le celle di una `DataGrid` hanno un riempimento più stretto
+(`DataGridCell Button`): con quello dei bottoni normali escono dalla colonna.
+
 ## Trappole di Avalonia
 
 Ognuna di queste è costata un bug vero, tre dei quali invisibili finché non ho renderizzato la

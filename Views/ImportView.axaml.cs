@@ -107,7 +107,7 @@ public partial class ImportView : UserControl, IReloadable
             FileName.Text = System.IO.Path.GetFileName(path);
             Errore.Text = $"Non riesco a leggere il file: {ex.Message}";
             Errore.IsVisible = true;
-            Found.IsVisible = Actions.IsVisible = false;
+            Found.IsVisible = Actions.IsVisible = ReplaceBox.IsVisible = false;
             return;
         }
 
@@ -118,14 +118,17 @@ public partial class ImportView : UserControl, IReloadable
         {
             var vista = new SheetMapping(foglio);
             vista.Changed += UpdateTotal;
+            // Con un foglio solo si vede subito tutto; con tanti si parte chiusi, altrimenti
+            // la schermata diventa un rotolo prima ancora di aver capito cosa c'è dentro.
+            vista.Apri(fogli.Count == 1);
             _sheets.Add(vista);
             Sheets.Children.Add(vista);
         }
 
         // Con un foglio solo non c'è niente da annunciare: la schermata resta semplice.
         Found.IsVisible = fogli.Count > 1;
-        Found.Text = $"Trovati {fogli.Count} fogli in {System.IO.Path.GetFileName(path)}";
-        Actions.IsVisible = true;
+        Found.Text = $"{fogli.Count} fogli nel file. Apri «Colonne» per vedere come li stiamo leggendo.";
+        Actions.IsVisible = ReplaceBox.IsVisible = true;
         UpdateTotal();
     }
 
@@ -142,7 +145,15 @@ public partial class ImportView : UserControl, IReloadable
         var storici = Storico.Sum(s => s.ChiusiNelloStorico);
         var utenti = Anagrafica.Sum(s => s.Report.Members.Count);
 
-        Apply.Content = Replacing ? "Sostituisci" : "Importa";
+        // Quando cancella, il bottone lo dice col nome e col colore, e la casella si accende.
+        Apply.Content = Replacing ? "Sostituisci tutto" : "Importa";
+        Apply.Classes.Set("primary", !Replacing);
+        Apply.Classes.Set("danger", Replacing);
+        ReplaceBox.Classes.Set("card", !Replacing);
+        ReplaceBox.Classes.Set("warning", Replacing);
+        ReplaceHint.Text = Replacing
+            ? "Cancella libri, utenti e storico dei prestiti, poi carica questo file. Non si torna indietro."
+            : "Lascialo spento per aggiungere questi dati a quelli che ci sono già.";
 
         var parti = new List<string>();
         if (_sheets.Count > 1)

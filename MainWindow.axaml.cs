@@ -17,17 +17,28 @@ public partial class MainWindow : Window
     {
         InitializeComponent();
 
+        var prestiti = new PrestitiView(db);
+        var metriche = new MetricheView(db);
+
         var views = new Control[]
         {
             new LibriView(db),
             new UtentiView(db),
-            new PrestitiView(db),
-            new MetricheView(db),
+            prestiti,
+            metriche,
             new ImportView(db),
         };
 
         for (var i = 0; i < views.Length; i++)
             ((TabItem)Tabs.Items[i]!).Content = views[i];
+
+        // Dalle schede numeriche si salta all'elenco già filtrato: un numero che non
+        // porta da nessuna parte costringe a rifare la ricerca a mano.
+        metriche.ApriPrestiti += filtro =>
+        {
+            Tabs.SelectedIndex = Array.IndexOf(views, prestiti);
+            prestiti.Mostra(filtro);
+        };
 
         Tabs.SelectionChanged += (_, _) => Current?.Reload();
     }

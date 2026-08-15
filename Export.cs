@@ -37,7 +37,7 @@ public static class Export
     public static Counts Write(Db db, string path)
     {
         var righe = db.ForExport();
-        var storico = db.Loans(openOnly: false, limit: int.MaxValue);
+        var storico = db.Loans(Filtri.Tutti, limit: int.MaxValue);
         var utenti = db.Members(limit: int.MaxValue);
 
         using var wb = new XLWorkbook();

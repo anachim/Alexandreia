@@ -4,35 +4,37 @@
              x:Class="Alexandreia.MetricheView">
 
     <ScrollViewer>
-        <StackPanel Spacing="4">
+        <StackPanel Spacing="0">
 
-            <WrapPanel Name="Cards" ItemWidth="150" />
+            <TextBlock Text="ADESSO" Classes="h" Margin="0,0,0,10" />
+            <WrapPanel Name="Now" />
 
-            <StackPanel Orientation="Horizontal" Spacing="10" Margin="0,14,0,0">
-                <TextBlock Text="Periodo" VerticalAlignment="Center" Classes="muted" />
-                <ComboBox Name="Period" Width="180" SelectedIndex="0">
-                    <ComboBoxItem>Ultimi 12 mesi</ComboBoxItem>
-                    <ComboBoxItem>Anno corrente</ComboBoxItem>
-                    <ComboBoxItem>Da sempre</ComboBoxItem>
-                </ComboBox>
+            <TextBlock Text="IN UN PERIODO" Classes="h" />
+            <StackPanel Orientation="Horizontal" Spacing="10" Margin="0,0,0,12">
+                <ComboBox Name="Period" MinWidth="180" />
+                <CalendarDatePicker Name="From" Width="150" IsVisible="False" />
+                <CalendarDatePicker Name="To" Width="150" IsVisible="False" />
+                <TextBlock Name="Range" Classes="muted" VerticalAlignment="Center" />
             </StackPanel>
 
-            <TextBlock Text="Prestiti per mese" Classes="h" />
+            <WrapPanel Name="Cards" />
+
+            <TextBlock Text="PRESTITI PER MESE" Classes="h" />
             <ItemsControl Name="Months">
                 <ItemsControl.ItemTemplate>
                     <DataTemplate x:DataType="m:Bar">
                         <Grid ColumnDefinitions="80,50,400" Margin="0,2">
                             <TextBlock Text="{Binding Label}" />
                             <TextBlock Grid.Column="1" Text="{Binding Count}" />
-                            <Border Grid.Column="2" Background="#7a5c2e" Height="12" CornerRadius="2"
-                                    Width="{Binding Width}" HorizontalAlignment="Left" />
+                            <Border Grid.Column="2" Background="{DynamicResource Stamp}" Height="12"
+                                    CornerRadius="2" Width="{Binding Width}" HorizontalAlignment="Left" />
                         </Grid>
                     </DataTemplate>
                 </ItemsControl.ItemTemplate>
             </ItemsControl>
             <TextBlock Name="NoMonths" Classes="muted" Text="Nessun prestito nel periodo." IsVisible="False" />
 
-            <TextBlock Text="Libri più prestati" Classes="h" />
+            <TextBlock Text="LIBRI PIÙ PRESTATI" Classes="h" />
             <ItemsControl Name="Top">
                 <ItemsControl.ItemTemplate>
                     <DataTemplate x:DataType="m:Bar">
@@ -43,15 +45,15 @@
                             <TextBlock Grid.Column="2" Text="{Binding Note}" Classes="muted"
                                        TextTrimming="CharacterEllipsis" />
                             <TextBlock Grid.Column="3" Text="{Binding Count}" />
-                            <Border Grid.Column="4" Background="#7a5c2e" Height="12" CornerRadius="2"
-                                    Width="{Binding Width}" HorizontalAlignment="Left" />
+                            <Border Grid.Column="4" Background="{DynamicResource Stamp}" Height="12"
+                                    CornerRadius="2" Width="{Binding Width}" HorizontalAlignment="Left" />
                         </Grid>
                     </DataTemplate>
                 </ItemsControl.ItemTemplate>
             </ItemsControl>
             <TextBlock Name="NoTop" Classes="muted" Text="Nessun prestito nel periodo." IsVisible="False" />
 
-            <TextBlock Text="Mai usciti" Classes="h" />
+            <TextBlock Text="MAI USCITI" Classes="h" />
             <ItemsControl Name="Never">
                 <ItemsControl.ItemTemplate>
                     <DataTemplate x:DataType="m:Book">

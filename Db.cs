@@ -48,6 +48,15 @@ public class Member
         : FullName;
 }
 
+/// <summary>Che prestiti mostrare. Le etichette italiane stanno nella vista.</summary>
+public static class Filtri
+{
+    public const string Fuori = "fuori";
+    public const string Ritardo = "ritardo";
+    public const string Rientrati = "rientrati";
+    public const string Tutti = "tutti";
+}
+
 public class Loan
 {
     public long Id { get; set; }
@@ -65,9 +74,12 @@ public class Loan
     public bool IsOpen => ReturnedAt is null;
     public bool Overdue => IsOpen && DueAt.Date < DateTime.Today;
 
-    public string DueLabel => Overdue
-        ? $"{DueAt:dd/MM/yyyy} — in ritardo di {(DateTime.Today - DueAt.Date).Days} gg"
-        : DueAt.ToString("dd/MM/yyyy");
+    public int LateDays => Overdue ? (DateTime.Today - DueAt.Date).Days : 0;
+
+    public string DueLabel => DueAt.ToString("dd/MM/yyyy");
+
+    /// <summary>Testo del timbro sulla riga in ritardo.</summary>
+    public string LateLabel => LateDays == 1 ? "1 GIORNO DI RITARDO" : $"{LateDays} GIORNI DI RITARDO";
 }
 
 // Proprietà settabili, non record posizionali: SQLite non dichiara il tipo delle colonne calcolate
@@ -307,7 +319,7 @@ public class Db
             new { loanId, now = DateTime.Now }) == 1;
     }
 
-    public List<Loan> Loans(bool openOnly = true, string? search = null, int limit = 500)
+    public List<Loan> Loans(string filter = Filtri.Fuori, string? search = null, int limit = 500)
     {
         using var c = Open();
         return c.Query<Loan>("""
@@ -315,12 +327,22 @@ public class Db
             FROM Loans l
             JOIN Books b   ON b.Id = l.BookId
             JOIN Members m ON m.Id = l.MemberId
-            WHERE (@openOnly = 0 OR l.ReturnedAt IS NULL)
+            WHERE (   (@filter = 'tutti')
+                   OR (@filter = 'fuori'     AND l.ReturnedAt IS NULL)
+                   OR (@filter = 'ritardo'   AND l.ReturnedAt IS NULL AND l.DueAt < @today)
+                   OR (@filter = 'rientrati' AND l.ReturnedAt IS NOT NULL))
               AND (@q IS NULL OR b.Title LIKE @like OR m.LastName LIKE @like OR m.FirstName LIKE @like)
             ORDER BY l.ReturnedAt IS NOT NULL, l.DueAt, l.Id DESC
             LIMIT @limit
             """,
-            new { openOnly, q = string.IsNullOrWhiteSpace(search) ? null : search, like = $"%{search}%", limit })
+            new
+            {
+                filter,
+                today = DateTime.Today,
+                q = string.IsNullOrWhiteSpace(search) ? null : search,
+                like = $"%{search}%",
+                limit,
+            })
             .ToList();
     }
 
@@ -343,27 +365,51 @@ public class Db
             """, new { today = DateTime.Today });
     }
 
-    public List<TopBook> TopBooks(DateTime since, int limit = 20)
+    public List<TopBook> TopBooks(DateTime since, DateTime? until = null, int limit = 20)
     {
         using var c = Open();
         return c.Query<TopBook>("""
             SELECT b.Title, b.Author, b.Notes, COUNT(*) AS Loans
             FROM Loans l JOIN Books b ON b.Id = l.BookId
-            WHERE l.LoanedAt >= @since
+            WHERE l.LoanedAt >= @since AND (@until IS NULL OR l.LoanedAt < @until)
             GROUP BY l.BookId
             ORDER BY Loans DESC, b.Title
             LIMIT @limit
-            """, new { since, limit }).ToList();
+            """, new { since, until, limit }).ToList();
     }
 
-    public List<MonthCount> LoansByMonth(DateTime since)
+    public List<MonthCount> LoansByMonth(DateTime since, DateTime? until = null)
     {
         using var c = Open();
         return c.Query<MonthCount>("""
             SELECT substr(LoanedAt, 1, 7) AS Month, COUNT(*) AS Loans
-            FROM Loans WHERE LoanedAt >= @since
+            FROM Loans
+            WHERE LoanedAt >= @since AND (@until IS NULL OR LoanedAt < @until)
             GROUP BY Month ORDER BY Month
-            """, new { since }).ToList();
+            """, new { since, until }).ToList();
+    }
+
+    /// <summary>Quello che è successo dentro una finestra, per poterla confrontare con la precedente.</summary>
+    public record Window
+    {
+        public int Loans { get; set; }
+        public double AvgDays { get; set; }
+        public int People { get; set; }
+    }
+
+    public Window InWindow(DateTime from, DateTime? to = null)
+    {
+        using var c = Open();
+        return c.QuerySingle<Window>("""
+            SELECT
+              (SELECT COUNT(*) FROM Loans
+                 WHERE LoanedAt >= @from AND (@to IS NULL OR LoanedAt < @to))            AS Loans,
+              (SELECT IFNULL(AVG(julianday(ReturnedAt) - julianday(LoanedAt)), 0.0) FROM Loans
+                 WHERE ReturnedAt IS NOT NULL
+                   AND LoanedAt >= @from AND (@to IS NULL OR LoanedAt < @to))            AS AvgDays,
+              (SELECT COUNT(DISTINCT MemberId) FROM Loans
+                 WHERE LoanedAt >= @from AND (@to IS NULL OR LoanedAt < @to))            AS People
+            """, new { from, to });
     }
 
     public List<Book> NeverLent(int limit = 200)

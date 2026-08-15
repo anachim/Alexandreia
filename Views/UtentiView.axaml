@@ -7,7 +7,7 @@
 
         <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Spacing="10" Margin="0,0,0,10">
             <TextBox Name="Search" Width="300" PlaceholderText="Cerca per cognome, nome, nota…" />
-            <Button Name="New" Content="Nuovo utente" />
+            <Button Name="New" Classes="primary" Content="Nuovo utente" />
         </StackPanel>
 
         <TextBlock Name="Message" DockPanel.Dock="Top" TextWrapping="Wrap" Margin="0,0,0,10" IsVisible="False" />

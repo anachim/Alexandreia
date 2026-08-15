@@ -115,8 +115,42 @@ public class PrestitiTests : IDisposable
 
         var prestito = _db.Loans().Single();
         Assert.True(prestito.Overdue);
-        Assert.Contains("in ritardo di 3 gg", prestito.DueLabel);
+        Assert.Equal(3, prestito.LateDays);
+        Assert.Equal("3 GIORNI DI RITARDO", prestito.LateLabel);
         Assert.Equal("Ipazia", prestito.MemberName);
+    }
+
+    [Fact]
+    public void I_filtri_dei_prestiti_selezionano_quello_che_dicono()
+    {
+        var secondo = _db.SaveBook(new Book { Title = "Almagesto", Author = "Tolomeo" });
+        _db.Lend(_libro, _ipazia, DateTime.Today.AddDays(-3));   // in ritardo
+        _db.Lend(secondo, _ipazia, DateTime.Today.AddDays(10));  // regolare
+        var chiuso = _db.SaveBook(new Book { Title = "Coniche" });
+        _db.Lend(chiuso, _ipazia, DateTime.Today.AddDays(10));
+        _db.Return(_db.Loans().Single(l => l.BookId == chiuso).Id);
+
+        Assert.Equal(2, _db.Loans(Filtri.Fuori).Count);
+        Assert.Equal("Elementi", Assert.Single(_db.Loans(Filtri.Ritardo)).Title);
+        Assert.Equal("Coniche", Assert.Single(_db.Loans(Filtri.Rientrati)).Title);
+        Assert.Equal(3, _db.Loans(Filtri.Tutti).Count);
+    }
+
+    [Fact]
+    public void La_finestra_conta_solo_i_prestiti_che_ci_stanno_dentro()
+    {
+        _db.Apply(Import.Plan([
+            new object?[] { "Titolo", "Prestato a", "Prestato il" },
+            new object?[] { "Vecchio", "Ipazia", DateTime.Today.AddMonths(-8) },
+            new object?[] { "Recente", "Eratostene", DateTime.Today.AddDays(-2) },
+        ]).Rows);
+
+        Assert.Equal(1, _db.InWindow(DateTime.Today.AddMonths(-1)).Loans);
+        Assert.Equal(2, _db.InWindow(DateTime.Today.AddMonths(-12)).Loans);
+        Assert.Equal(2, _db.InWindow(DateTime.Today.AddMonths(-12)).People);
+
+        // Finestra chiusa: il prestito recente resta fuori.
+        Assert.Equal(1, _db.InWindow(DateTime.Today.AddMonths(-12), DateTime.Today.AddMonths(-1)).Loans);
     }
 
     [Fact]

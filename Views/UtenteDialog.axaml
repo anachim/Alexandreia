@@ -25,7 +25,7 @@
 
         <StackPanel Orientation="Horizontal" Spacing="10" HorizontalAlignment="Right" Margin="0,6,0,0">
             <Button Name="Annulla" Content="Annulla" IsCancel="True" />
-            <Button Name="Salva" Content="Salva" IsDefault="True" />
+            <Button Name="Salva" Classes="primary" Content="Salva" IsDefault="True" />
         </StackPanel>
     </StackPanel>
 </Window>

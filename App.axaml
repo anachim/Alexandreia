@@ -1,36 +1,174 @@
 <Application xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              x:Class="Alexandreia.App"
-             RequestedThemeVariant="Default">
+             RequestedThemeVariant="Light">
+
+    <Application.Resources>
+        <!-- Il mondo di riferimento non è il libro antico, è l'amministrazione della
+             biblioteca: registri, cartellini di scaffale, e il timbro viola della data di
+             restituzione — da cui viene l'accento. -->
+        <SolidColorBrush x:Key="Paper"     Color="#EFF1EC" />
+        <SolidColorBrush x:Key="Card"      Color="#FFFFFF" />
+        <SolidColorBrush x:Key="Ink"       Color="#1B2430" />
+        <SolidColorBrush x:Key="Muted"     Color="#79808C" />
+        <SolidColorBrush x:Key="Rule"      Color="#D8DCD5" />
+        <SolidColorBrush x:Key="Stamp"     Color="#4C3F8F" />
+        <SolidColorBrush x:Key="StampSoft" Color="#EDE9F7" />
+        <SolidColorBrush x:Key="Late"      Color="#B23A2E" />
+        <SolidColorBrush x:Key="LateSoft"  Color="#FAEDEB" />
+        <SolidColorBrush x:Key="Free"      Color="#2E6B5E" />
+    </Application.Resources>
 
     <Application.Styles>
         <FluentTheme />
         <StyleInclude Source="avares://Avalonia.Controls.DataGrid/Themes/Fluent.xaml" />
 
+        <Style Selector="Window">
+            <Setter Property="Background" Value="{DynamicResource Paper}" />
+            <Setter Property="Foreground" Value="{DynamicResource Ink}" />
+        </Style>
+
+        <!-- Tipografia: una sola famiglia, personalità da scala e spaziatura. -->
+        <Style Selector="TextBlock">
+            <Setter Property="Foreground" Value="{DynamicResource Ink}" />
+        </Style>
         <Style Selector="TextBlock.h">
-            <Setter Property="FontSize" Value="17" />
+            <Setter Property="FontSize" Value="13" />
             <Setter Property="FontWeight" Value="SemiBold" />
-            <Setter Property="Margin" Value="0,14,0,6" />
+            <Setter Property="Foreground" Value="{DynamicResource Muted}" />
+            <Setter Property="LetterSpacing" Value="1.4" />
+            <Setter Property="Margin" Value="0,20,0,8" />
         </Style>
         <Style Selector="TextBlock.muted">
-            <Setter Property="Opacity" Value="0.6" />
+            <Setter Property="Foreground" Value="{DynamicResource Muted}" />
         </Style>
         <Style Selector="TextBlock.overdue">
-            <Setter Property="Foreground" Value="#b3261e" />
+            <Setter Property="Foreground" Value="{DynamicResource Late}" />
             <Setter Property="FontWeight" Value="SemiBold" />
         </Style>
+
+        <!-- Linguette: barra alta, la selezionata segnata dal timbro. -->
+        <Style Selector="TabItem">
+            <Setter Property="FontSize" Value="15" />
+            <Setter Property="Foreground" Value="{DynamicResource Muted}" />
+            <Setter Property="Padding" Value="14,6" />
+            <Setter Property="MinHeight" Value="40" />
+        </Style>
+        <Style Selector="TabItem:selected">
+            <Setter Property="Foreground" Value="{DynamicResource Stamp}" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+        </Style>
+        <Style Selector="TabItem:selected /template/ Border#PART_SelectedPipe">
+            <Setter Property="Background" Value="{DynamicResource Stamp}" />
+        </Style>
+
+        <!-- Bottoni: neutro di base, pieno per l'azione principale, vermiglio per quella
+             che cancella. Il colore qui è informazione, non decorazione. -->
+        <Style Selector="Button">
+            <Setter Property="Background" Value="{DynamicResource Card}" />
+            <Setter Property="BorderBrush" Value="{DynamicResource Rule}" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="Foreground" Value="{DynamicResource Ink}" />
+            <Setter Property="CornerRadius" Value="4" />
+            <Setter Property="Padding" Value="12,6" />
+        </Style>
+        <Style Selector="Button.primary">
+            <Setter Property="Background" Value="{DynamicResource Stamp}" />
+            <Setter Property="BorderBrush" Value="{DynamicResource Stamp}" />
+            <Setter Property="Foreground" Value="White" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="Padding" Value="16,7" />
+        </Style>
+        <Style Selector="Button.primary:pointerover /template/ ContentPresenter">
+            <Setter Property="Background" Value="#3E3378" />
+            <Setter Property="Foreground" Value="White" />
+        </Style>
+        <Style Selector="Button.danger">
+            <Setter Property="Background" Value="{DynamicResource Late}" />
+            <Setter Property="BorderBrush" Value="{DynamicResource Late}" />
+            <Setter Property="Foreground" Value="White" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="Padding" Value="16,7" />
+        </Style>
+        <Style Selector="Button.danger:pointerover /template/ ContentPresenter">
+            <Setter Property="Background" Value="#96301F" />
+            <Setter Property="Foreground" Value="White" />
+        </Style>
+
+        <!-- I bottoni dentro le righe stanno stretti: il riempimento dei bottoni normali
+             li farebbe uscire dalla colonna. -->
+        <Style Selector="DataGridCell Button">
+            <Setter Property="Padding" Value="9,3" />
+            <Setter Property="FontSize" Value="13" />
+        </Style>
+
         <Style Selector="Border.card">
-            <Setter Property="BorderBrush" Value="{DynamicResource SystemControlForegroundBaseLowBrush}" />
+            <Setter Property="Background" Value="{DynamicResource Card}" />
+            <Setter Property="BorderBrush" Value="{DynamicResource Rule}" />
             <Setter Property="BorderThickness" Value="1" />
             <Setter Property="CornerRadius" Value="6" />
             <Setter Property="Padding" Value="14,10" />
-            <Setter Property="MinWidth" Value="120" />
         </Style>
+
+        <!-- Scheda numerica cliccabile: si solleva appena, per dire che si può premere. -->
+        <Style Selector="Border.stat">
+            <Setter Property="Transitions">
+                <Transitions>
+                    <BrushTransition Property="BorderBrush" Duration="0:0:0.12" />
+                </Transitions>
+            </Setter>
+        </Style>
+        <Style Selector="Border.stat.clickable:pointerover">
+            <Setter Property="BorderBrush" Value="{DynamicResource Stamp}" />
+            <Setter Property="Cursor" Value="Hand" />
+        </Style>
+
+        <!-- L'elemento firma: il timbro della scadenza, premuto storto sulla scheda. -->
+        <Style Selector="Border.stamp">
+            <Setter Property="BorderBrush" Value="{DynamicResource Late}" />
+            <Setter Property="BorderThickness" Value="1.5" />
+            <Setter Property="Background" Value="{DynamicResource LateSoft}" />
+            <Setter Property="CornerRadius" Value="2" />
+            <Setter Property="Padding" Value="7,2" />
+            <Setter Property="HorizontalAlignment" Value="Left" />
+            <Setter Property="RenderTransform" Value="rotate(-2deg)" />
+        </Style>
+        <Style Selector="Border.stamp > TextBlock">
+            <Setter Property="Foreground" Value="{DynamicResource Late}" />
+            <Setter Property="FontSize" Value="11" />
+            <Setter Property="FontWeight" Value="Bold" />
+            <Setter Property="LetterSpacing" Value="1.2" />
+        </Style>
+
         <Style Selector="Border.drop">
-            <Setter Property="BorderBrush" Value="{DynamicResource SystemControlForegroundBaseMediumBrush}" />
+            <Setter Property="BorderBrush" Value="{DynamicResource Rule}" />
             <Setter Property="BorderThickness" Value="2" />
             <Setter Property="CornerRadius" Value="8" />
             <Setter Property="Padding" Value="28" />
+            <Setter Property="Background" Value="{DynamicResource Card}" />
+        </Style>
+
+        <!-- Barra dell'operazione che cancella tutto: deve farsi notare prima, non dopo. -->
+        <Style Selector="Border.warning">
+            <Setter Property="Background" Value="{DynamicResource LateSoft}" />
+            <Setter Property="BorderBrush" Value="{DynamicResource Late}" />
+            <Setter Property="BorderThickness" Value="1,1,1,1" />
+            <Setter Property="CornerRadius" Value="6" />
+            <Setter Property="Padding" Value="14,10" />
+        </Style>
+
+        <Style Selector="DataGridColumnHeader">
+            <Setter Property="FontSize" Value="11" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="Foreground" Value="{DynamicResource Muted}" />
+            <Setter Property="LetterSpacing" Value="0.8" />
+        </Style>
+        <Style Selector="DataGrid">
+            <Setter Property="Background" Value="{DynamicResource Card}" />
+            <Setter Property="BorderBrush" Value="{DynamicResource Rule}" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="CornerRadius" Value="6" />
+            <Setter Property="RowBackground" Value="{DynamicResource Card}" />
         </Style>
     </Application.Styles>
 </Application>

@@ -3,34 +3,37 @@
              xmlns:m="using:Alexandreia"
              x:Class="Alexandreia.SheetMapping">
 
-    <StackPanel Spacing="4" Margin="0,0,0,16">
+    <Border Classes="card" Margin="0,0,0,10" Padding="12,10">
+        <StackPanel Spacing="8">
 
-        <!-- DockPanel e non StackPanel: il riassunto cambia, e uno StackPanel orizzontale
-             lo lascerebbe disposto con l'ingombro del testo precedente. -->
-        <DockPanel Name="Head" LastChildFill="True">
-            <ComboBox Name="Tipo" DockPanel.Dock="Left" MinWidth="190" Margin="0,0,10,0" />
-            <TextBlock Name="Nome" DockPanel.Dock="Left" FontWeight="SemiBold"
-                       VerticalAlignment="Center" Margin="0,0,10,0" />
-            <TextBlock Name="Riassunto" Classes="muted" VerticalAlignment="Center" />
-        </DockPanel>
+            <!-- DockPanel e non StackPanel: il riassunto cambia, e uno StackPanel orizzontale
+                 lo lascerebbe disposto con l'ingombro del testo precedente. -->
+            <DockPanel Name="Head" LastChildFill="True">
+                <ComboBox Name="Tipo" DockPanel.Dock="Left" MinWidth="190" Margin="0,0,12,0" />
+                <Button Name="Dettagli" DockPanel.Dock="Right" Content="Colonne" />
+                <TextBlock Name="Nome" DockPanel.Dock="Left" FontWeight="SemiBold"
+                           VerticalAlignment="Center" Margin="0,0,12,0" />
+                <TextBlock Name="Riassunto" Classes="muted" VerticalAlignment="Center" />
+            </DockPanel>
 
-        <TextBlock Name="Problema" Classes="overdue" TextWrapping="Wrap" IsVisible="False" />
+            <TextBlock Name="Problema" Classes="overdue" TextWrapping="Wrap" IsVisible="False" />
 
-        <DataGrid Name="Grid" AutoGenerateColumns="False" IsReadOnly="True" MaxHeight="300"
-                  x:DataType="m:ColumnChoice" GridLinesVisibility="Horizontal">
-            <DataGrid.Columns>
-                <DataGridTextColumn Header="Colonna del foglio" Binding="{Binding Header, Mode=OneWay}" Width="220" />
-                <DataGridTextColumn Header="Celle piene" Binding="{Binding Filled, Mode=OneWay}" Width="110" />
-                <DataGridTemplateColumn Header="Va nel campo" Width="180">
-                    <DataGridTemplateColumn.CellTemplate>
-                        <DataTemplate x:DataType="m:ColumnChoice">
-                            <ComboBox ItemsSource="{Binding Options}" SelectedItem="{Binding Field, Mode=TwoWay}"
-                                      SelectionChanged="OnFieldChanged" Margin="4,2" MinWidth="160" />
-                        </DataTemplate>
-                    </DataGridTemplateColumn.CellTemplate>
-                </DataGridTemplateColumn>
-                <DataGridTextColumn Header="Esempi dal foglio" Binding="{Binding Samples, Mode=OneWay}" Width="*" />
-            </DataGrid.Columns>
-        </DataGrid>
-    </StackPanel>
+            <DataGrid Name="Grid" AutoGenerateColumns="False" IsReadOnly="True" MaxHeight="300"
+                      IsVisible="False" x:DataType="m:ColumnChoice" GridLinesVisibility="Horizontal">
+                <DataGrid.Columns>
+                    <DataGridTextColumn Header="Colonna del foglio" Binding="{Binding Header, Mode=OneWay}" Width="220" />
+                    <DataGridTextColumn Header="Celle piene" Binding="{Binding Filled, Mode=OneWay}" Width="110" />
+                    <DataGridTemplateColumn Header="Va nel campo" Width="180">
+                        <DataGridTemplateColumn.CellTemplate>
+                            <DataTemplate x:DataType="m:ColumnChoice">
+                                <ComboBox ItemsSource="{Binding Options}" SelectedItem="{Binding Field, Mode=TwoWay}"
+                                          SelectionChanged="OnFieldChanged" Margin="4,2" MinWidth="160" />
+                            </DataTemplate>
+                        </DataGridTemplateColumn.CellTemplate>
+                    </DataGridTemplateColumn>
+                    <DataGridTextColumn Header="Esempi dal foglio" Binding="{Binding Samples, Mode=OneWay}" Width="*" />
+                </DataGrid.Columns>
+            </DataGrid>
+        </StackPanel>
+    </Border>
 </UserControl>

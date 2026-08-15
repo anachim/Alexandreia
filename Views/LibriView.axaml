@@ -8,7 +8,7 @@
         <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Spacing="10" Margin="0,0,0,10">
             <TextBox Name="Search" Width="300" PlaceholderText="Cerca titolo, autore, nota…" />
             <CheckBox Name="OnlyAvailable" Content="Solo disponibili" VerticalAlignment="Center" />
-            <Button Name="New" Content="Nuovo libro" />
+            <Button Name="New" Classes="primary" Content="Nuovo libro" />
         </StackPanel>
 
         <TextBlock Name="Message" DockPanel.Dock="Top" TextWrapping="Wrap"
@@ -20,7 +20,7 @@
                 <ComboBox Name="Person" MinWidth="220" PlaceholderText="A chi?" />
                 <TextBlock Text="rientro entro" VerticalAlignment="Center" Classes="muted" />
                 <CalendarDatePicker Name="DueAt" Width="150" />
-                <Button Name="ConfirmLend" Content="Conferma" />
+                <Button Name="ConfirmLend" Classes="primary" Content="Conferma" />
                 <Button Name="CancelLend" Content="Annulla" />
             </StackPanel>
         </Border>
@@ -35,7 +35,7 @@
                 <DataGridTextColumn Header="Autore" Binding="{Binding Author, Mode=OneWay}" Width="200" />
                 <DataGridTextColumn Header="Nota" Binding="{Binding Notes, Mode=OneWay}" Width="200" />
                 <DataGridTextColumn Header="Prestato a" Binding="{Binding LentTo, Mode=OneWay}" Width="170" />
-                <DataGridTemplateColumn Header="" Width="230">
+                <DataGridTemplateColumn Header="" Width="250">
                     <DataGridTemplateColumn.CellTemplate>
                         <DataTemplate x:DataType="m:Book">
                             <StackPanel Orientation="Horizontal" Spacing="4" Margin="4,2">

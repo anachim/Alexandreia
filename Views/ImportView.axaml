@@ -6,43 +6,53 @@
 
     <DockPanel LastChildFill="True">
 
-        <Border DockPanel.Dock="Top" Classes="card" Margin="0,0,0,16">
+        <TextBlock DockPanel.Dock="Top" Text="PORTA I DATI FUORI" Classes="h" Margin="0,0,0,10" />
+
+        <Border DockPanel.Dock="Top" Classes="card" Margin="0,0,0,4">
             <DockPanel LastChildFill="True">
-                <Button Name="DoExport" Content="Esporta…" DockPanel.Dock="Left" Margin="0,0,14,0" />
-                <TextBlock Name="ExportResult" VerticalAlignment="Center" Classes="muted"
-                           TextWrapping="Wrap"
-                           Text="Salva tutto l'archivio in un file Excel a tre fogli: i libri con chi ce li ha adesso, lo storico dei prestiti e l'anagrafica degli utenti. È lo stesso formato che questa scheda sa rileggere, quindi serve sia da copia di sicurezza sia per portare i dati su un altro computer." />
+                <Button Name="DoExport" Classes="primary" Content="Esporta in Excel"
+                        DockPanel.Dock="Left" Margin="0,0,14,0" />
+                <TextBlock Name="ExportResult" VerticalAlignment="Center" Classes="muted" TextWrapping="Wrap"
+                           Text="Tre fogli: i libri con chi ce li ha adesso, lo storico dei prestiti e l'anagrafica. È lo stesso formato che questa scheda sa rileggere: serve da copia di sicurezza e per spostare l'archivio su un altro computer." />
             </DockPanel>
         </Border>
 
-        <TextBlock DockPanel.Dock="Top" Text="Carica da un file Excel" Classes="h" Margin="0,0,0,8" />
+        <TextBlock DockPanel.Dock="Top" Text="PORTA I DATI DENTRO" Classes="h" />
 
         <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Spacing="10" Margin="0,0,0,10">
-            <Button Name="Pick" Content="Scegli file…" />
-            <TextBlock Name="FileName" VerticalAlignment="Center" Classes="muted" />
+            <Button Name="Pick" Classes="primary" Content="Scegli un file Excel" />
+            <TextBlock Name="FileName" VerticalAlignment="Center" FontWeight="SemiBold" />
         </StackPanel>
 
         <Border Name="DropZone" DockPanel.Dock="Top" Classes="drop" Margin="0,0,0,10">
             <StackPanel Spacing="6" HorizontalAlignment="Center">
-                <TextBlock Text="Trascina qui il file Excel" HorizontalAlignment="Center" FontWeight="SemiBold" />
-                <TextBlock Classes="muted" HorizontalAlignment="Center"
-                           Text="oppure usa «Scegli file…».  Accetta .xlsx e .xls" />
+                <TextBlock Text="Trascina qui il file" HorizontalAlignment="Center" FontWeight="SemiBold" />
+                <TextBlock Classes="muted" HorizontalAlignment="Center" Text="Accetta .xlsx e .xls" />
             </StackPanel>
         </Border>
 
-        <TextBlock Name="Found" DockPanel.Dock="Top" Margin="0,0,0,10" IsVisible="False" FontWeight="SemiBold" />
+        <TextBlock Name="Found" DockPanel.Dock="Top" Margin="0,0,0,10" IsVisible="False" Classes="muted" />
         <TextBlock Name="Errore" DockPanel.Dock="Top" Classes="overdue" TextWrapping="Wrap"
                    Margin="0,0,0,10" IsVisible="False" />
 
-        <Border Name="Actions" DockPanel.Dock="Bottom" IsVisible="False" Margin="0,10,0,0">
-            <!-- DockPanel e non StackPanel: uno StackPanel orizzontale dimensiona i figli sul
-                 contenuto, e un testo che cambia resta disposto con l'ingombro di prima. -->
+        <!-- Dichiarato per primo, quindi in fondo: il bottone sta sotto e la casella che
+             cancella tutto gli sta sopra, dove la si legge prima di premere. -->
+        <Border Name="Actions" DockPanel.Dock="Bottom" IsVisible="False" Margin="0,0,0,0">
+            <!-- DockPanel e non StackPanel: il riepilogo cambia, e uno StackPanel orizzontale
+                 lo lascerebbe disposto con l'ingombro del testo precedente. -->
             <DockPanel LastChildFill="True">
-                <Button Name="Apply" Content="Importa" DockPanel.Dock="Left" Margin="0,0,14,0" />
-                <CheckBox Name="Replace" DockPanel.Dock="Right" VerticalAlignment="Center"
-                          Content="Sostituisci tutto l'archivio" />
+                <Button Name="Apply" Classes="primary" Content="Importa"
+                        DockPanel.Dock="Left" Margin="0,0,14,0" />
                 <TextBlock Name="Summary" VerticalAlignment="Center" FontWeight="SemiBold" />
             </DockPanel>
+        </Border>
+
+        <Border Name="ReplaceBox" DockPanel.Dock="Bottom" Classes="card" IsVisible="False" Margin="0,12,0,10">
+            <StackPanel Spacing="4">
+                <CheckBox Name="Replace" Content="Sostituisci tutto l'archivio" FontWeight="SemiBold" />
+                <TextBlock Name="ReplaceHint" Classes="muted" TextWrapping="Wrap" Margin="28,0,0,0"
+                           Text="Lascialo spento per aggiungere questi dati a quelli che ci sono già." />
+            </StackPanel>
         </Border>
 
         <ScrollViewer>
