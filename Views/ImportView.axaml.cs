@@ -22,6 +22,8 @@ public partial class ImportView : UserControl, IReloadable
 
         DoExport.Click += async (_, _) => await SaveExport();
         DropZone.Click += async (_, _) => await PickFile();
+        // Handled: senza, il clic arriverebbe anche al riquadro e riaprirebbe la scelta file.
+        CloseFile.Click += (_, e) => { e.Handled = true; Chiudi(); };
         Apply.Click += async (_, _) => await DoImport();
         Replace.IsCheckedChanged += (_, _) => UpdateTotal();
 
@@ -145,6 +147,25 @@ public partial class ImportView : UserControl, IReloadable
     {
         DropTitle.Text = System.IO.Path.GetFileName(path);
         DropHint.Text = "Premi qui o trascina un altro file per cambiarlo.";
+        CloseFile.IsVisible = true;
+    }
+
+    /// <summary>
+    /// Chiude il file e riporta la scheda com'era. Serve soprattutto dopo un import:
+    /// lasciare a schermo un file già caricato invita a premere Importa una seconda volta.
+    /// </summary>
+    public void Chiudi()
+    {
+        Sheets.Items.Clear();
+        _sheets.Clear();
+
+        DropTitle.Text = "Scegli un file Excel";
+        DropHint.Text = "oppure trascinalo qui.  Accetta .xlsx e .xls";
+        CloseFile.IsVisible = false;
+
+        Replace.IsChecked = false;
+        Found.IsVisible = Errore.IsVisible = Actions.IsVisible = ReplaceBox.IsVisible = false;
+        Summary.Text = "";
     }
 
     void UpdateTotal()

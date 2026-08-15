@@ -396,6 +396,26 @@ public class UiTests : IDisposable
     }
 
     [AvaloniaFact]
+    public void Chiudendo_il_file_la_scheda_torna_come_prima()
+    {
+        var w = Open();
+        Tab(w, TabDati);
+        var view = Carica(w, "catalogo.xlsx");
+
+        Assert.NotEmpty(view.Fogli);
+        Assert.True(Named<Button>(w, "CloseFile").IsVisible);
+
+        Click(Named<Button>(w, "CloseFile"));
+
+        Assert.Empty(view.Fogli);
+        Assert.Equal("Scegli un file Excel", Named<TextBlock>(w, "DropTitle").Text);
+        Assert.False(Named<Button>(w, "CloseFile").IsVisible);
+        Assert.False(Named<Border>(w, "Actions").IsVisible);
+        Assert.False(Named<Border>(w, "ReplaceBox").IsVisible);
+        Assert.False(Named<CheckBox>(w, "Replace").IsChecked);
+    }
+
+    [AvaloniaFact]
     public void Il_tipo_del_foglio_lo_dice_una_tendina_gia_preselezionata()
     {
         var w = Open();
