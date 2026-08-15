@@ -1,0 +1,67 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:m="using:Alexandreia"
+             x:Class="Alexandreia.MetricheView">
+
+    <ScrollViewer>
+        <StackPanel Spacing="4">
+
+            <WrapPanel Name="Cards" ItemWidth="150" />
+
+            <StackPanel Orientation="Horizontal" Spacing="10" Margin="0,14,0,0">
+                <TextBlock Text="Periodo" VerticalAlignment="Center" Classes="muted" />
+                <ComboBox Name="Period" Width="180" SelectedIndex="0">
+                    <ComboBoxItem>Ultimi 12 mesi</ComboBoxItem>
+                    <ComboBoxItem>Anno corrente</ComboBoxItem>
+                    <ComboBoxItem>Da sempre</ComboBoxItem>
+                </ComboBox>
+            </StackPanel>
+
+            <TextBlock Text="Prestiti per mese" Classes="h" />
+            <ItemsControl Name="Months">
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate x:DataType="m:Bar">
+                        <Grid ColumnDefinitions="80,50,*" Margin="0,2">
+                            <TextBlock Text="{Binding Label}" />
+                            <TextBlock Grid.Column="1" Text="{Binding Count}" />
+                            <Border Grid.Column="2" Background="#7a5c2e" Height="12" CornerRadius="2"
+                                    Width="{Binding Width}" HorizontalAlignment="Left" />
+                        </Grid>
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
+            <TextBlock Name="NoMonths" Classes="muted" Text="Nessun prestito nel periodo." IsVisible="False" />
+
+            <TextBlock Text="Libri più prestati" Classes="h" />
+            <ItemsControl Name="Top">
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate x:DataType="m:Bar">
+                        <Grid ColumnDefinitions="300,180,50,240" Margin="0,2">
+                            <TextBlock Text="{Binding Label}" TextTrimming="CharacterEllipsis" />
+                            <TextBlock Grid.Column="1" Text="{Binding Sub}" Classes="muted" />
+                            <TextBlock Grid.Column="2" Text="{Binding Count}" />
+                            <Border Grid.Column="3" Background="#7a5c2e" Height="12" CornerRadius="2"
+                                    Width="{Binding Width}" HorizontalAlignment="Left" />
+                        </Grid>
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
+            <TextBlock Name="NoTop" Classes="muted" Text="Nessun prestito nel periodo." IsVisible="False" />
+
+            <TextBlock Text="Mai usciti" Classes="h" />
+            <ItemsControl Name="Never">
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate x:DataType="m:Book">
+                        <Grid ColumnDefinitions="300,180,110" Margin="0,2">
+                            <TextBlock Text="{Binding Title}" TextTrimming="CharacterEllipsis" />
+                            <TextBlock Grid.Column="1" Text="{Binding Author}" Classes="muted" />
+                            <TextBlock Grid.Column="2" Text="{Binding Location}" Classes="muted" />
+                        </Grid>
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
+            <TextBlock Name="NoNever" Classes="muted" IsVisible="False"
+                       Text="Tutti i libri sono stati prestati almeno una volta." />
+        </StackPanel>
+    </ScrollViewer>
+</UserControl>

@@ -1,0 +1,54 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:m="using:Alexandreia"
+             x:Class="Alexandreia.ImportView"
+             DragDrop.AllowDrop="True">
+
+    <DockPanel LastChildFill="True">
+
+        <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Spacing="10" Margin="0,0,0,10">
+            <Button Name="Pick" Content="Scegli file…" />
+            <TextBlock Name="FileName" VerticalAlignment="Center" Classes="muted" />
+        </StackPanel>
+
+        <Border Name="DropZone" DockPanel.Dock="Top" Classes="drop" Margin="0,0,0,10">
+            <StackPanel Spacing="6" HorizontalAlignment="Center">
+                <TextBlock Text="Trascina qui il file Excel" HorizontalAlignment="Center" FontWeight="SemiBold" />
+                <TextBlock Classes="muted" HorizontalAlignment="Center"
+                           Text="oppure usa «Scegli file…».  Accetta .xlsx e .xls" />
+            </StackPanel>
+        </Border>
+
+        <StackPanel Name="Details" DockPanel.Dock="Top" Spacing="6" IsVisible="False">
+            <TextBlock Name="SheetInfo" />
+            <TextBlock Name="Warnings" Classes="overdue" TextWrapping="Wrap" IsVisible="False" />
+        </StackPanel>
+
+        <Border Name="Actions" DockPanel.Dock="Bottom" IsVisible="False" Margin="0,10,0,0">
+            <StackPanel Orientation="Horizontal" Spacing="14">
+                <CheckBox Name="Merge" IsChecked="True" VerticalAlignment="Center"
+                          Content="Unisci le righe uguali in copie dello stesso libro" />
+                <TextBlock Name="Summary" VerticalAlignment="Center" FontWeight="SemiBold" />
+                <Button Name="Apply" Content="Importa" />
+                <TextBlock Name="Result" VerticalAlignment="Center" />
+            </StackPanel>
+        </Border>
+
+        <DataGrid Name="Grid" AutoGenerateColumns="False" IsReadOnly="True" IsVisible="False"
+                  x:DataType="m:ColumnChoice" GridLinesVisibility="Horizontal">
+            <DataGrid.Columns>
+                <DataGridTextColumn Header="Colonna del foglio" Binding="{Binding Header, Mode=OneWay}" Width="220" />
+                <DataGridTextColumn Header="Celle piene" Binding="{Binding Filled, Mode=OneWay}" Width="90" />
+                <DataGridTemplateColumn Header="Va nel campo" Width="160">
+                    <DataGridTemplateColumn.CellTemplate>
+                        <DataTemplate x:DataType="m:ColumnChoice">
+                            <ComboBox ItemsSource="{Binding Options}" SelectedItem="{Binding Field, Mode=TwoWay}"
+                                      SelectionChanged="OnFieldChanged" Margin="4,2" MinWidth="140" />
+                        </DataTemplate>
+                    </DataGridTemplateColumn.CellTemplate>
+                </DataGridTemplateColumn>
+                <DataGridTextColumn Header="Esempi dal foglio" Binding="{Binding Samples, Mode=OneWay}" Width="*" />
+            </DataGrid.Columns>
+        </DataGrid>
+    </DockPanel>
+</UserControl>

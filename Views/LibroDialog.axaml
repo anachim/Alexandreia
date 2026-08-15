@@ -1,0 +1,57 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        x:Class="Alexandreia.LibroDialog"
+        Title="Libro" Width="520" SizeToContent="Height"
+        WindowStartupLocation="CenterOwner" CanResize="False">
+
+    <StackPanel Margin="20" Spacing="10">
+
+        <StackPanel Spacing="3">
+            <TextBlock Text="Titolo" Classes="muted" />
+            <TextBox Name="Titolo" />
+        </StackPanel>
+
+        <StackPanel Spacing="3">
+            <TextBlock Text="Autore" Classes="muted" />
+            <TextBox Name="Autore" />
+        </StackPanel>
+
+        <Grid ColumnDefinitions="*,10,120">
+            <StackPanel Grid.Column="0" Spacing="3">
+                <TextBlock Text="ISBN" Classes="muted" />
+                <TextBox Name="Isbn" />
+            </StackPanel>
+            <StackPanel Grid.Column="2" Spacing="3">
+                <TextBlock Text="Anno" Classes="muted" />
+                <TextBox Name="Anno" />
+            </StackPanel>
+        </Grid>
+
+        <Grid ColumnDefinitions="*,10,*,10,90">
+            <StackPanel Grid.Column="0" Spacing="3">
+                <TextBlock Text="Editore" Classes="muted" />
+                <TextBox Name="Editore" />
+            </StackPanel>
+            <StackPanel Grid.Column="2" Spacing="3">
+                <TextBlock Text="Collocazione" Classes="muted" />
+                <TextBox Name="Collocazione" />
+            </StackPanel>
+            <StackPanel Grid.Column="4" Spacing="3">
+                <TextBlock Text="Copie" Classes="muted" />
+                <TextBox Name="Copie" />
+            </StackPanel>
+        </Grid>
+
+        <StackPanel Spacing="3">
+            <TextBlock Text="Note" Classes="muted" />
+            <TextBox Name="Note" AcceptsReturn="True" Height="70" TextWrapping="Wrap" />
+        </StackPanel>
+
+        <TextBlock Name="Errore" Classes="overdue" IsVisible="False" TextWrapping="Wrap" />
+
+        <StackPanel Orientation="Horizontal" Spacing="10" HorizontalAlignment="Right" Margin="0,6,0,0">
+            <Button Name="Annulla" Content="Annulla" IsCancel="True" />
+            <Button Name="Salva" Content="Salva" IsDefault="True" />
+        </StackPanel>
+    </StackPanel>
+</Window>

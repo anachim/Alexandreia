@@ -1,0 +1,76 @@
+using Avalonia.Controls;
+using Avalonia.Layout;
+using Avalonia.Media;
+
+namespace Alexandreia;
+
+/// <summary>Riga con barra: la larghezza la calcola la vista, non il database.</summary>
+public record Bar(string Label, string Sub, int Count, double Width);
+
+public partial class MetricheView : UserControl, IReloadable
+{
+    const double BarMax = 220;
+
+    readonly Db _db = null!;
+
+    public MetricheView() => InitializeComponent();
+
+    public MetricheView(Db db) : this()
+    {
+        _db = db;
+        Period.SelectionChanged += (_, _) => Reload();
+    }
+
+    public void Reload()
+    {
+        var s = _db.Stats();
+        Cards.Children.Clear();
+        AddCard(s.Books, "Titoli");
+        AddCard(s.Copies, "Copie");
+        AddCard(s.OpenLoans, "Fuori ora");
+        AddCard(s.Overdue, "In ritardo", alert: s.Overdue > 0);
+        AddCard(s.TotalLoans, "Prestiti totali");
+        AddCard(s.AvgDays.ToString("0.#"), "Giorni medi");
+        AddCard(s.NeverLent, "Mai prestati");
+
+        var since = Period.SelectedIndex switch
+        {
+            1 => new DateTime(DateTime.Today.Year, 1, 1),
+            2 => DateTime.MinValue,
+            _ => DateTime.Today.AddMonths(-12),
+        };
+
+        var months = _db.LoansByMonth(since);
+        var maxMonth = months.Count > 0 ? months.Max(m => m.Loans) : 1;
+        Months.ItemsSource = months.Select(m => new Bar(m.Month, "", m.Loans, BarMax * m.Loans / maxMonth)).ToList();
+        NoMonths.IsVisible = months.Count == 0;
+
+        var top = _db.TopBooks(since);
+        var maxTop = top.Count > 0 ? top[0].Loans : 1;
+        Top.ItemsSource = top.Select(t => new Bar(t.Title, t.Author, t.Loans, BarMax * t.Loans / maxTop)).ToList();
+        NoTop.IsVisible = top.Count == 0;
+
+        var never = _db.NeverLent();
+        Never.ItemsSource = never;
+        NoNever.IsVisible = never.Count == 0;
+    }
+
+    void AddCard(object value, string label, bool alert = false)
+    {
+        var number = new TextBlock { Text = value.ToString(), FontSize = 24 };
+        // Solo se serve: assegnare null a Foreground non lascia il colore
+        // predefinito, lo azzera, e il numero sparisce.
+        if (alert) number.Foreground = Brushes.IndianRed;
+
+        Cards.Children.Add(new Border
+        {
+            Classes = { "card" },
+            Margin = new Avalonia.Thickness(0, 0, 10, 10),
+            HorizontalAlignment = HorizontalAlignment.Left,
+            Child = new StackPanel
+            {
+                Children = { number, new TextBlock { Text = label, Opacity = 0.6, FontSize = 12 } },
+            },
+        });
+    }
+}

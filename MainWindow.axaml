@@ -1,0 +1,13 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        x:Class="Alexandreia.MainWindow"
+        Title="Alexandreia" Width="1040" Height="700"
+        WindowStartupLocation="CenterScreen">
+
+    <TabControl Name="Tabs" Margin="10">
+        <TabItem Header="Libri" />
+        <TabItem Header="Prestiti" />
+        <TabItem Header="Metriche" />
+        <TabItem Header="Import" />
+    </TabControl>
+</Window>

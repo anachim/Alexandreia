@@ -1,0 +1,47 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:m="using:Alexandreia"
+             x:Class="Alexandreia.PrestitiView">
+
+    <DockPanel LastChildFill="True">
+
+        <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Spacing="10" Margin="0,0,0,10">
+            <TextBox Name="Search" Width="300" PlaceholderText="Cerca per titolo o per persona…" />
+            <CheckBox Name="ShowAll" Content="Mostra anche i rientrati" VerticalAlignment="Center" />
+        </StackPanel>
+
+        <TextBlock Name="Message" DockPanel.Dock="Top" Margin="0,0,0,10" IsVisible="False" />
+        <TextBlock Name="Empty" DockPanel.Dock="Bottom" Classes="muted" Margin="0,10,0,0" IsVisible="False" />
+
+        <!-- Mode=OneWay ovunque: i DataGridTextColumn legano in TwoWay anche con IsReadOnly,
+             e riscriverebbero nel modello (una cella vuota torna indietro come default). -->
+        <DataGrid Name="Grid" AutoGenerateColumns="False" IsReadOnly="True" x:DataType="m:Loan"
+                  GridLinesVisibility="Horizontal" CanUserSortColumns="True">
+            <DataGrid.Columns>
+                <DataGridTextColumn Header="Titolo" Binding="{Binding Title, Mode=OneWay}" Width="*" />
+                <DataGridTextColumn Header="Autore" Binding="{Binding Author, Mode=OneWay}" Width="150" />
+                <DataGridTextColumn Header="A chi" Binding="{Binding Borrower, Mode=OneWay}" Width="150" />
+                <DataGridTextColumn Header="Prestato il" Width="100"
+                                    Binding="{Binding LoanedAt, Mode=OneWay, StringFormat='{}{0:dd/MM/yyyy}'}" />
+                <DataGridTemplateColumn Header="Rientro entro" Width="230">
+                    <DataGridTemplateColumn.CellTemplate>
+                        <DataTemplate x:DataType="m:Loan">
+                            <TextBlock Text="{Binding DueLabel}" Classes.overdue="{Binding Overdue}"
+                                       VerticalAlignment="Center" Margin="4,0" />
+                        </DataTemplate>
+                    </DataGridTemplateColumn.CellTemplate>
+                </DataGridTemplateColumn>
+                <DataGridTextColumn Header="Rientrato" Width="100"
+                                    Binding="{Binding ReturnedAt, Mode=OneWay, StringFormat='{}{0:dd/MM/yyyy}'}" />
+                <DataGridTemplateColumn Header="" Width="110">
+                    <DataGridTemplateColumn.CellTemplate>
+                        <DataTemplate x:DataType="m:Loan">
+                            <Button Content="Rientrato" Click="OnReturn" Tag="{Binding}" Margin="4,2"
+                                    IsVisible="{Binding IsOpen}" />
+                        </DataTemplate>
+                    </DataGridTemplateColumn.CellTemplate>
+                </DataGridTemplateColumn>
+            </DataGrid.Columns>
+        </DataGrid>
+    </DockPanel>
+</UserControl>

@@ -1,0 +1,55 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:m="using:Alexandreia"
+             x:Class="Alexandreia.LibriView">
+
+    <DockPanel LastChildFill="True">
+
+        <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Spacing="10" Margin="0,0,0,10">
+            <TextBox Name="Search" Width="300" PlaceholderText="Cerca titolo, autore, ISBN…" />
+            <CheckBox Name="OnlyAvailable" Content="Solo disponibili" VerticalAlignment="Center" />
+            <Button Name="New" Content="Nuovo libro" />
+        </StackPanel>
+
+        <TextBlock Name="Message" DockPanel.Dock="Top" TextWrapping="Wrap"
+                   Margin="0,0,0,10" IsVisible="False" />
+
+        <Border Name="LendPanel" DockPanel.Dock="Top" Classes="card" IsVisible="False" Margin="0,0,0,10">
+            <StackPanel Orientation="Horizontal" Spacing="10">
+                <TextBlock Name="LendTitle" VerticalAlignment="Center" FontWeight="SemiBold" />
+                <TextBox Name="Borrower" Width="200" PlaceholderText="A chi?" />
+                <TextBlock Text="rientro entro" VerticalAlignment="Center" Classes="muted" />
+                <CalendarDatePicker Name="DueAt" Width="150" />
+                <Button Name="ConfirmLend" Content="Conferma" />
+                <Button Name="CancelLend" Content="Annulla" />
+            </StackPanel>
+        </Border>
+
+        <TextBlock Name="Empty" DockPanel.Dock="Bottom" Classes="muted" Margin="0,10,0,0" IsVisible="False" />
+
+        <DataGrid Name="Grid" AutoGenerateColumns="False" IsReadOnly="True" x:DataType="m:Book"
+                  GridLinesVisibility="Horizontal" CanUserSortColumns="True">
+            <!-- Mode=OneWay: vedi PrestitiView, i DataGridTextColumn riscrivono nel modello. -->
+            <DataGrid.Columns>
+                <DataGridTextColumn Header="Titolo" Binding="{Binding Title, Mode=OneWay}" Width="*" />
+                <DataGridTextColumn Header="Autore" Binding="{Binding Author, Mode=OneWay}" Width="180" />
+                <DataGridTextColumn Header="Anno" Binding="{Binding Year, Mode=OneWay}" Width="85" />
+                <DataGridTextColumn Header="Collocazione" Binding="{Binding Location, Mode=OneWay}" Width="120" />
+                <DataGridTextColumn Header="Disponibili" Binding="{Binding Available, Mode=OneWay}" Width="105" />
+                <DataGridTextColumn Header="Copie" Binding="{Binding Copies, Mode=OneWay}" Width="80" />
+                <DataGridTemplateColumn Header="" Width="230">
+                    <DataGridTemplateColumn.CellTemplate>
+                        <DataTemplate x:DataType="m:Book">
+                            <StackPanel Orientation="Horizontal" Spacing="4" Margin="4,2">
+                                <Button Content="Presta" Click="OnLend"
+                                        IsEnabled="{Binding IsAvailable}" Tag="{Binding}" />
+                                <Button Content="Modifica" Click="OnEdit" Tag="{Binding}" />
+                                <Button Content="Archivia" Click="OnArchive" Tag="{Binding}" />
+                            </StackPanel>
+                        </DataTemplate>
+                    </DataGridTemplateColumn.CellTemplate>
+                </DataGridTemplateColumn>
+            </DataGrid.Columns>
+        </DataGrid>
+    </DockPanel>
+</UserControl>

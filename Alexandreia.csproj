@@ -1,20 +1,38 @@
-<Project Sdk="Microsoft.NET.Sdk.Web">
+<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
+    <OutputType>WinExe</OutputType>
     <TargetFramework>net10.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
-    <BlazorDisableThrowNavigationException>true</BlazorDisableThrowNavigationException>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+    <AvaloniaNameGeneratorIsEnabled>true</AvaloniaNameGeneratorIsEnabled>
   </PropertyGroup>
 
-  <!-- tests/ è un progetto a sé: tenerlo fuori dal glob del progetto web -->
+  <!-- SkiaSharp e HarfBuzz spediscono i .pdb nativi accanto alle librerie: sono 105 MB di
+       simboli che finirebbero nel pacchetto consegnato. Arrivano come asset nativi, quindi
+       non basta DebugType=none: vanno tolti dalla lista di pubblicazione. -->
+  <Target Name="RimuoviPdbDalPacchetto" AfterTargets="ComputeResolvedFilesToPublishList"
+          Condition="'$(Configuration)' == 'Release'">
+    <ItemGroup>
+      <ResolvedFileToPublish Remove="@(ResolvedFileToPublish)" Condition="'%(Extension)' == '.pdb'" />
+    </ItemGroup>
+  </Target>
+
+  <!-- tests/ è un progetto a sé: tenerlo fuori dal glob -->
   <ItemGroup>
     <Compile Remove="tests\**" />
     <Content Remove="tests\**" />
     <None Remove="tests\**" />
+    <AvaloniaResource Remove="tests\**" />
   </ItemGroup>
 
   <ItemGroup>
+    <PackageReference Include="Avalonia" Version="12.1.1" />
+    <PackageReference Include="Avalonia.Desktop" Version="12.1.1" />
+    <PackageReference Include="Avalonia.Themes.Fluent" Version="12.1.1" />
+    <PackageReference Include="Avalonia.Fonts.Inter" Version="12.1.1" />
+    <PackageReference Include="Avalonia.Controls.DataGrid" Version="12.1.1" />
     <PackageReference Include="Dapper" Version="2.1.79" />
     <PackageReference Include="ExcelDataReader" Version="3.9.0" />
     <PackageReference Include="Microsoft.Data.Sqlite" Version="10.0.11" />

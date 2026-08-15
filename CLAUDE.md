@@ -2,32 +2,28 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-Gestionale di biblioteca offline: CRUD libri, prestiti/rientri, metriche. Blazor Server in ascolto
-su loopback, SQLite via Dapper, distribuito come cartella autonoma. Nessuna connessione di rete.
+Gestionale di biblioteca: CRUD libri, prestiti/rientri, metriche, import da Excel. Applicazione
+desktop **Avalonia**, SQLite via Dapper, distribuita come singolo eseguibile. Nessuna rete.
 
-Il codice, i commenti, i messaggi a video e i commit sono **in italiano**. Anche i nomi dei test.
+Il codice, i commenti, i testi a video e i commit sono **in italiano**. Anche i nomi dei test.
 
 ## Comandi
 
 ```bash
-dotnet run                                    # avvia; apre il browser su 127.0.0.1
+dotnet run
 dotnet build
-dotnet test tests                             # tutti i test
-dotnet test tests --filter "FullyQualifiedName~Ultima_copia"   # un test solo
+dotnet test tests
 
-# import Excel: senza --apply non tocca il database
-dotnet run -- --import libri.xlsx
-dotnet run -- --import libri.xlsx --apply
+# Un test solo. Attenzione: `--filter` è di VSTest, la Testing Platform lo IGNORA
+# in silenzio (warning MTP0001) e gira tutta la suite facendoti credere il contrario.
+dotnet test tests -- --filter-method "*Ultima_copia*"
 
 dotnet publish -c Release -r win-x64 --self-contained \
   -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true
 ```
 
-Variabili utili in test e script: `ALEXANDREIA_DB` (percorso del database),
-`ALEXANDREIA_NO_BROWSER=1` (non aprire il browser). Senza la seconda, ogni avvio apre una scheda.
-
-L'app sceglie una **porta libera** (`127.0.0.1:0`): per interrogarla via HTTP bisogna leggere la
-riga `Alexandreia: http://...` dallo stdout, non assumere una porta fissa.
+`ALEXANDREIA_DB` punta il database altrove: usalo sempre nelle prove, per non sporcare l'archivio
+vero in `%LOCALAPPDATA%\Alexandreia\`.
 
 ## Trappole di Dapper + SQLite
 
@@ -54,42 +50,64 @@ Non spezzarle in leggi-poi-scrivi "per leggibilità": si riaprirebbe la finestra
 copia esce due volte, e servirebbero transazioni che così non servono. Stesso schema in `SaveBook`
 (rifiuta di scendere sotto le copie già fuori) e `ArchiveBook`.
 
-`Book.Available` **non è una colonna**: è calcolata nella query (`AvailableExpr`) e riempita da
-Dapper come proprietà. Le INSERT/UPDATE elencano le colonne esplicitamente, quindi non la scrivono.
-
-## Cancellazione
+`Book.Available` **non è una colonna**: è calcolata nella query (`AvailableExpr`). `IsAvailable`,
+`IsOpen`, `Overdue` e `DueLabel` sono proprietà calcolate che esistono per il binding XAML.
 
 I libri si **archiviano** (`Books.Archived = 1`), non si cancellano: eliminare il record porterebbe
-via lo storico prestiti, cioè le metriche. Le query di elenco filtrano `Archived = 0`; quelle
-storiche no.
+via lo storico prestiti, cioè le metriche.
 
-## Import Excel
+## Trappole di Avalonia
 
-`Import.cs` è diviso in due apposta:
+Ognuna di queste è costata un bug vero, due dei quali invisibili finché non ho renderizzato la
+finestra su immagine.
 
-- `ReadSheet(path)` — unica parte che tocca il disco, restituisce `List<object?[]>`
-- `Plan(rows, ...)` — pura, lavora su matrici di celle
+- **`DataGridTextColumn` lega in TwoWay anche con `IsReadOnly="True"`** e **riscrive nel modello**:
+  una cella vuota torna indietro come `default(DateTime)`, che ha spento `Loan.IsOpen` e fatto
+  sparire il bottone «Rientrato». Metti **sempre** `Mode=OneWay` su questi binding.
+- **`Foreground = null` non lascia il colore predefinito, lo azzera**: il testo diventa invisibile
+  senza alcun errore. Assegna il pennello solo quando serve (vedi `MetricheView.AddCard`).
+- I binding sono **compilati**: ogni `DataTemplate` vuole il suo `x:DataType`, e quello sul
+  `DataGrid` **non** si propaga dentro `CellTemplate`. I tipi usati nei binding devono essere
+  **pubblici e a livello di namespace** (per questo `Bar` e `ColumnChoice` non sono annidati).
+- Un controllo `Name="Title"` dentro una `Window` **collide con `Window.Title`**. I controlli dei
+  dialoghi hanno nomi italiani anche per questo.
+- Avalonia 12 ha sostituito `IDataObject` con `IDataTransfer`: il drag&drop usa
+  `e.DataTransfer.TryGetFile()`, non `e.Data.GetFiles()`.
+- `TextBox.Watermark` è deprecato, si chiama `PlaceholderText`.
 
-Quindi **i test dell'import non usano nessun `.xlsx`**: passano array di `object?`. Se aggiungi
-logica, mettila in `Plan`.
+## Test
 
-Le intestazioni sono riconosciute per **corrispondenza esatta** contro `Synonyms`, deliberatamente
-senza euristiche di tipo "contiene" o "inizia per": una colonna mappata sul campo sbagliato su 1400
-righe non si nota. Ciò che non riconosce finisce in `Notes` e si corregge con `--map "Col=Campo"`.
-Non "migliorare" questo in fuzzy matching.
+xunit **v3** sulla Microsoft Testing Platform. Tre vincoli che si tengono a vicenda:
 
-`--apply` è obbligatorio per scrivere, e un secondo import è rifiutato senza `--force`.
+- il progetto di test è `<OutputType>Exe</OutputType>`
+- `dotnet.config` alla radice indirizza `dotnet test` al runner giusto (dal SDK .NET 10)
+- `xunit.v3` è **pinnato a 3.2.2**, la versione contro cui è compilato `Avalonia.Headless.XUnit`
+  12.1.1. Con la 4.0.0 la scoperta dei test `[AvaloniaFact]` fallisce con `MissingMethodException`
+
+I test di interfaccia (`tests/UiTests.cs`) aprono la `MainWindow` headless e premono i bottoni.
+La piattaforma headless è configurata con `UseHeadlessDrawing = false` e Skia, quindi si può
+**catturare la finestra come immagine** — l'unico modo di vedere davvero la UI da qui:
+
+```csharp
+window.CaptureRenderedFrame()?.Save(path);   // Avalonia.Headless
+```
+
+Se una vista non compare nell'albero visuale, manca un giro di
+`Dispatcher.UIThread.RunJobs()` (vedi `Settle()`).
+
+Attenzione: più viste hanno un `DataGrid` chiamato `Grid`. Cercare per nome dalla finestra intera
+può restituire quello sbagliato — parti dalla vista.
+
+## Struttura del progetto
+
+L'applicazione sta nella root e il progetto di test in `tests/`, dentro il suo glob. Per questo
+`Alexandreia.csproj` ha `<Compile Remove="tests\**" />`.
+
+Sempre nel csproj, il target `RimuoviPdbDalPacchetto` toglie i `.pdb` nativi di Skia e HarfBuzz
+dalla pubblicazione: sono 105 MB di simboli e `DebugType=none` non li tocca, perché arrivano come
+asset nativi.
 
 ## Rilascio
 
 CI su ogni push a `main`/`develop` e su ogni PR. La release parte **solo da un tag `v*`**, mai da un
-merge. Un solo runner Ubuntu cross-compila per `win-x64`, `linux-x64` e `osx-arm64`.
-
-Il publish **non produce un file solo**: esce una cartella (~100 MB) con eseguibile, `wwwroot` e il
-manifest degli static assets. Va copiata intera; funziona anche spostandola (verificato).
-
-## Struttura del progetto
-
-Il progetto web sta nella root e il progetto di test in `tests/`, dentro il suo glob. Per questo
-`Alexandreia.csproj` ha `<Compile Remove="tests\**" />`: senza, i file di test finirebbero
-compilati due volte.
+merge. Un solo runner Ubuntu cross-compila per le tre piattaforme.

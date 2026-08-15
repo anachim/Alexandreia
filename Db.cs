@@ -23,6 +23,8 @@ public class Book
     public string? Notes { get; set; }
 
     public int Available { get; set; } // calcolata dalla query, non è una colonna
+
+    public bool IsAvailable => Available > 0;
 }
 
 public class Loan
@@ -36,7 +38,12 @@ public class Loan
 
     public string Title { get; set; } = ""; // dal join
     public string Author { get; set; } = "";
-    public bool Overdue => ReturnedAt is null && DueAt.Date < DateTime.Today;
+    public bool IsOpen => ReturnedAt is null;
+    public bool Overdue => IsOpen && DueAt.Date < DateTime.Today;
+
+    public string DueLabel => Overdue
+        ? $"{DueAt:dd/MM/yyyy} — in ritardo di {(DateTime.Today - DueAt.Date).Days} gg"
+        : DueAt.ToString("dd/MM/yyyy");
 }
 
 // Proprietà settabili, non record posizionali: SQLite non dichiara il tipo delle colonne calcolate
