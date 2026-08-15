@@ -348,6 +348,72 @@ public class ImportTests
     }
 
     [Fact]
+    public void I_fogli_si_riconoscono_dalle_colonne_non_dal_nome_ne_dall_ordine()
+    {
+        var file = Path.Combine(Path.GetTempPath(), $"alexandreia-ordine-{Guid.NewGuid():N}.xlsx");
+        try
+        {
+            Con(db =>
+            {
+                db.Apply(Import.Plan([
+                    R("Titolo", "Autore", "Prestato a"),
+                    R("Elementi", "Euclide", "Rossi Mario"),
+                    R("Almagesto", "Tolomeo", null),
+                ]).Rows);
+                db.Return(db.Loans().Single().Id);
+                db.SaveMember(new Member { LastName = "Verdi", FirstName = "Luca" });
+                Export.Write(db, file);
+            });
+
+            Con(altro =>
+            {
+                var fogli = Import.ReadWorkbook(file);
+
+                // Nomi inventati e ordine sparso: quello che conta sono le colonne.
+                var storico = Import.Plan(fogli[1].Rows, "Foglio2");
+                var anagrafica = Import.Plan(fogli[2].Rows, "Elenco soci");
+                var archivio = Import.Plan(fogli[0].Rows, "Dati");
+
+                Assert.True(storico.IsHistory);
+                Assert.True(anagrafica.IsMembers);
+                Assert.False(archivio.IsHistory);
+                Assert.False(archivio.IsMembers);
+
+                var c = altro.ApplyAll(archivio.Rows, storico.Rows, anagrafica.Members, replace: true);
+                Assert.Equal(2, c.Books);
+                Assert.Equal(1, c.History);
+                Assert.Equal(0, c.HistorySkipped);
+                Assert.Equal(["Rossi Mario", "Verdi Luca"], altro.Members().Select(m => m.FullName));
+            });
+        }
+        finally
+        {
+            File.Delete(file);
+        }
+    }
+
+    [Fact]
+    public void Un_intestazione_che_non_riconosce_si_corregge_e_il_foglio_cambia_tipo()
+    {
+        var rows = new List<object?[]>
+        {
+            R("Titolo", "Autore", "Prestato a", "Quando e' tornato"),
+            R("Elementi", "Euclide", "Rossi Mario", "10/01/2026"),
+        };
+
+        // «Quando e' tornato» non è in nessuna lista: il foglio sembra un elenco di libri.
+        Assert.False(Import.Plan(rows).IsHistory);
+
+        // Basta indicarlo a mano dalla tendina e il foglio diventa storico.
+        var corretto = Import.Plan(rows, overrides: new Dictionary<string, string>
+        {
+            ["Quando e' tornato"] = Import.FReturnedAt,
+        });
+        Assert.True(corretto.IsHistory);
+        Assert.Equal(new DateTime(2026, 1, 10), Assert.Single(corretto.Rows).ReturnedAt);
+    }
+
+    [Fact]
     public void L_anagrafica_non_duplica_chi_c_e_gia()
     {
         Con(db =>

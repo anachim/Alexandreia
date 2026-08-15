@@ -77,6 +77,12 @@ Se il file ha **più fogli** li mostra tutti, ognuno con la **sua** mappatura e 
 includerlo o no — lo stesso campo si chiama «Titolo» in un foglio e «Libro» in un altro. Un foglio
 da cui non si ricava niente lo dice e resta fuori, invece di sparire in silenzio.
 
+**Nomi e ordine dei fogli non contano**: quello che conta sono le colonne. Un foglio con
+una colonna *Cognome* è l'anagrafica, uno con *Rientrato il* è lo storico, tutti gli altri sono
+libri — e vengono caricati sempre nell'ordine giusto, qualunque sia la loro posizione nel file. Se
+un'intestazione è scritta in un modo che non riconosce, basta indicarla dalla tendina: il foglio
+cambia tipo da solo.
+
 La casella **«Sostituisci tutto l'archivio»** trasforma il caricamento in un ripristino: cancella
 libri, utenti e storico e rimette quello che c'è nel file. È l'unica operazione irreversibile del
 programma e chiede conferma per nome.
