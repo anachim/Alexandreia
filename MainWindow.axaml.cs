@@ -62,7 +62,12 @@ public partial class MainWindow : Window
         Mostra();
     }
 
-    void Mostra() => Tema.Content = Scuro ? "Tema chiaro" : "Tema scuro";
+    void Mostra()
+    {
+        Luna.IsVisible = !Scuro;
+        Sole.IsVisible = Scuro;
+        ToolTip.SetTip(Tema, Scuro ? "Passa al tema chiaro" : "Passa al tema scuro");
+    }
 
     protected override void OnLoaded(RoutedEventArgs e)
     {

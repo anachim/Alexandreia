@@ -99,14 +99,21 @@ public class UiTests : IDisposable
         var w = Open();
         var bottone = Named<Button>(w, "Tema");
 
+        // L'icona mostra dove vai, non dove sei: nel chiaro si vede la luna.
+        Assert.True(Named<Avalonia.Controls.Shapes.Path>(w, "Luna").IsVisible);
+        Assert.False(Named<Avalonia.Controls.Shapes.Path>(w, "Sole").IsVisible);
+        Assert.Equal("Passa al tema scuro", ToolTip.GetTip(bottone));
+
         Click(bottone);
         Assert.Equal(ThemeVariant.Dark, Avalonia.Application.Current!.ActualThemeVariant);
-        Assert.Equal("Tema chiaro", bottone.Content);
+        Assert.True(Named<Avalonia.Controls.Shapes.Path>(w, "Sole").IsVisible);
+        Assert.False(Named<Avalonia.Controls.Shapes.Path>(w, "Luna").IsVisible);
+        Assert.Equal("Passa al tema chiaro", ToolTip.GetTip(bottone));
         Assert.Equal("scuro", _db.Setting(Db.TemaKey));
 
         Click(bottone);
         Assert.Equal(ThemeVariant.Light, Avalonia.Application.Current!.ActualThemeVariant);
-        Assert.Equal("Tema scuro", bottone.Content);
+        Assert.True(Named<Avalonia.Controls.Shapes.Path>(w, "Luna").IsVisible);
         Assert.Equal("chiaro", _db.Setting(Db.TemaKey));
     }
 

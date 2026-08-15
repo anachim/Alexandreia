@@ -15,7 +15,21 @@
             <TabItem Header="Dati" />
         </TabControl>
 
+        <!-- L'icona mostra dove vai, non dove sei: la luna quando c'è da passare allo scuro.
+             Da sola sarebbe ambigua, quindi il suggerimento lo dice a parole. -->
         <Button Name="Tema" Classes="quiet" HorizontalAlignment="Right" VerticalAlignment="Top"
-                Margin="0,6,4,0" FontSize="13" />
+                Margin="0,4,4,0" Padding="8,6">
+            <Panel Width="18" Height="18">
+                <Path Name="Luna" Stretch="Uniform" Stroke="{DynamicResource Muted}"
+                      StrokeThickness="1.7" StrokeJoin="Round" StrokeLineCap="Round"
+                      Data="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
+                <Path Name="Sole" Stretch="Uniform" Stroke="{DynamicResource Muted}"
+                      StrokeThickness="1.7" StrokeJoin="Round" StrokeLineCap="Round"
+                      Data="M12 7a5 5 0 1 0 0 10 5 5 0 0 0 0-10z
+                            M12 1v2 M12 21v2 M1 12h2 M21 12h2
+                            M4.22 4.22l1.42 1.42 M18.36 18.36l1.42 1.42
+                            M4.22 19.78l1.42-1.42 M18.36 5.64l1.42-1.42" />
+            </Panel>
+        </Button>
     </Grid>
 </Window>

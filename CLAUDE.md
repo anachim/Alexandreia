@@ -144,6 +144,11 @@ d'inchiostro invece di diventare nero. Di conseguenza il testo sopra un bottone 
 La scelta del tema sta nella tabella `Settings` del database, insieme ai dati: alla prima
 apertura si segue il sistema, dopo si segue l'utente.
 
+L'icona del tema mostra **dove vai, non dove sei** — la luna quando c'è da passare allo scuro.
+Un'icona da sola è ambigua in entrambe le letture, quindi il suggerimento lo dice a parole.
+I due simboli sono `Path` disegnati, non emoji: Inter non ne ha e si finirebbe su un ripiego
+di sistema, diverso da macchina a macchina.
+
 Il riferimento non è il libro antico ma **l'amministrazione della biblioteca** — registri,
 cartellini, e il timbro viola della data di restituzione, da cui viene l'accento `Stamp`. È una
 scelta presa per non finire nel crema + terracotta che è la risposta prevedibile per
