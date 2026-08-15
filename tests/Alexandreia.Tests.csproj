@@ -5,8 +5,8 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <IsPackable>false</IsPackable>
-    <!-- xunit v3 richiede che il progetto di test sia un eseguibile, e gira sulla
-         Microsoft Testing Platform: sul SDK .NET 10 va abilitata esplicitamente. -->
+    <!-- xunit v3 requires the test project to be an executable, and runs on the
+         Microsoft Testing Platform: on the .NET 10 SDK it must be enabled explicitly. -->
     <OutputType>Exe</OutputType>
     <TestingPlatformDotnetTestSupport>true</TestingPlatformDotnetTestSupport>
   </PropertyGroup>

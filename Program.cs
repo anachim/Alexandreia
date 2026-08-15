@@ -7,7 +7,7 @@ public static class Program
     [STAThread]
     public static void Main(string[] args) => BuildAvaloniaApp().StartWithClassicDesktopLifetime(args);
 
-    // Usato anche dai test headless e dal designer.
+    // Also used by the headless tests and by the designer.
     public static AppBuilder BuildAvaloniaApp()
         => AppBuilder.Configure<App>()
             .UsePlatformDetect()

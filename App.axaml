@@ -4,13 +4,13 @@
 
     <Application.Resources>
         <ResourceDictionary>
-            <!-- Il mondo di riferimento non è il libro antico, è l'amministrazione della
-                 biblioteca: registri, cartellini di scaffale, e il timbro viola della data di
-                 restituzione — da cui viene l'accento.
+            <!-- The reference world is not the antique book, it is library administration:
+                 ledgers, shelf tags, and the violet date-due stamp — where the accent
+                 comes from.
 
-                 Lo scuro non è l'inverso del chiaro: i colori conservano il significato, non
-                 la luminosità. Viola e vermiglio si schiariscono per restare leggibili su
-                 fondo scuro, e il fondo resta blu d'inchiostro invece di diventare nero. -->
+                 Dark is not the inverse of light: the colours keep their meaning, not their
+                 brightness. Violet and vermilion lighten up to stay readable on a dark
+                 ground, and the ground stays ink blue instead of turning black. -->
             <ResourceDictionary.ThemeDictionaries>
 
                 <ResourceDictionary x:Key="Light">
@@ -28,7 +28,7 @@
                     <SolidColorBrush x:Key="Free"      Color="#2E6B5E" />
                     <SolidColorBrush x:Key="FreeSoft"  Color="#E6F0EC" />
                     <SolidColorBrush x:Key="DoneSoft"  Color="#ECEDEA" />
-                    <!-- Testo sopra un bottone pieno: chiaro su accento scuro. -->
+                    <!-- Text on top of a filled button: light on a dark accent. -->
                     <SolidColorBrush x:Key="OnAccent"  Color="#FFFFFF" />
                 </ResourceDictionary>
 
@@ -47,8 +47,8 @@
                     <SolidColorBrush x:Key="Free"      Color="#6FBFA6" />
                     <SolidColorBrush x:Key="FreeSoft"  Color="#1E332D" />
                     <SolidColorBrush x:Key="DoneSoft"  Color="#2A3038" />
-                    <!-- Qui l'accento è chiaro, quindi il testo sopra deve essere scuro:
-                         bianco su viola chiaro non si legge. -->
+                    <!-- Here the accent is light, so the text on top must be dark:
+                         white on light violet does not read. -->
                     <SolidColorBrush x:Key="OnAccent"  Color="#171B21" />
                 </ResourceDictionary>
 
@@ -65,7 +65,7 @@
             <Setter Property="Foreground" Value="{DynamicResource Ink}" />
         </Style>
 
-        <!-- Tipografia: una sola famiglia, personalità da scala e spaziatura. -->
+        <!-- Typography: a single family, personality from scale and spacing. -->
         <Style Selector="TextBlock">
             <Setter Property="Foreground" Value="{DynamicResource Ink}" />
         </Style>
@@ -88,7 +88,7 @@
             <Setter Property="FontWeight" Value="SemiBold" />
         </Style>
 
-        <!-- Linguette: barra alta, la selezionata segnata dal timbro. -->
+        <!-- Tabs: a tall strip, the selected one marked by the accent. -->
         <Style Selector="TabItem">
             <Setter Property="FontSize" Value="15" />
             <Setter Property="Foreground" Value="{DynamicResource Muted}" />
@@ -103,8 +103,8 @@
             <Setter Property="Background" Value="{DynamicResource Stamp}" />
         </Style>
 
-        <!-- Bottoni: neutro di base, pieno per l'azione principale, vermiglio per quella
-             che cancella. Il colore qui è informazione, non decorazione. -->
+        <!-- Buttons: neutral by default, filled for the action that changes the archive,
+             vermilion for the one that deletes. Colour here is information, not decoration. -->
         <Style Selector="Button">
             <Setter Property="Background" Value="{DynamicResource Card}" />
             <Setter Property="BorderBrush" Value="{DynamicResource Rule}" />
@@ -136,14 +136,14 @@
             <Setter Property="Foreground" Value="{DynamicResource OnAccent}" />
         </Style>
 
-        <!-- I bottoni dentro le righe stanno stretti: il riempimento dei bottoni normali
-             li farebbe uscire dalla colonna. -->
+        <!-- Buttons inside rows run tight: the padding of ordinary buttons would push them
+             out of the column. -->
         <Style Selector="DataGridCell Button">
             <Setter Property="Padding" Value="9,3" />
             <Setter Property="FontSize" Value="13" />
         </Style>
 
-        <!-- Bottone di servizio: c'è ma non compete con quello che gli sta intorno. -->
+        <!-- Utility button: present, but not competing with what surrounds it. -->
         <Style Selector="Button.quiet">
             <Setter Property="Background" Value="Transparent" />
             <Setter Property="BorderThickness" Value="0" />
@@ -167,7 +167,7 @@
             <Setter Property="Padding" Value="14,10" />
         </Style>
 
-        <!-- Scheda numerica cliccabile: si solleva appena, per dire che si può premere. -->
+        <!-- Clickable stat card: it lifts just enough to say it can be pressed. -->
         <Style Selector="Border.stat">
             <Setter Property="Transitions">
                 <Transitions>
@@ -180,7 +180,7 @@
             <Setter Property="Cursor" Value="Hand" />
         </Style>
 
-        <!-- Lo stato di un prestito, detto a parole e non con un simbolo da interpretare. -->
+        <!-- The state of a loan, spelled out rather than left to a symbol to decode. -->
         <Style Selector="Border.pill">
             <Setter Property="Background" Value="{DynamicResource FreeSoft}" />
             <Setter Property="CornerRadius" Value="10" />
@@ -206,9 +206,9 @@
             <Setter Property="FontWeight" Value="Normal" />
         </Style>
 
-        <!-- Un bersaglio solo per due modi di fare la stessa cosa: premi e scegli,
-             oppure trascina. È un bottone e non un riquadro, così ci si arriva anche
-             da tastiera. -->
+        <!-- A single target for two ways of doing the same thing: press and pick, or drag
+             and drop. It is a button and not a plain box, so it is reachable from the
+             keyboard too. -->
         <Style Selector="Button.drop">
             <Setter Property="Background" Value="{DynamicResource Card}" />
             <Setter Property="BorderBrush" Value="{DynamicResource Rule}" />
@@ -216,8 +216,8 @@
             <Setter Property="CornerRadius" Value="8" />
             <Setter Property="Padding" Value="24" />
             <Setter Property="HorizontalAlignment" Value="Stretch" />
-            <!-- Stretch e non Center: col contenuto centrato il pannello interno è largo
-                 quanto il testo, e quello che ci si àncora a destra finisce lì accanto. -->
+            <!-- Stretch and not Center: with centred content the inner panel is only as
+                 wide as the text, and whatever docks right ends up next to it. -->
             <Setter Property="HorizontalContentAlignment" Value="Stretch" />
             <Setter Property="Cursor" Value="Hand" />
         </Style>
@@ -226,7 +226,7 @@
             <Setter Property="BorderBrush" Value="{DynamicResource Stamp}" />
         </Style>
 
-        <!-- Barra dell'operazione che cancella tutto: deve farsi notare prima, non dopo. -->
+        <!-- Bar for the operation that wipes everything: it has to be noticed before, not after. -->
         <Style Selector="Border.warning">
             <Setter Property="Background" Value="{DynamicResource LateSoft}" />
             <Setter Property="BorderBrush" Value="{DynamicResource Late}" />
@@ -240,8 +240,8 @@
             <Setter Property="FontWeight" Value="SemiBold" />
             <Setter Property="Foreground" Value="{DynamicResource Muted}" />
             <Setter Property="LetterSpacing" Value="0.8" />
-            <!-- Senza, sul tema scuro la barra delle intestazioni resta nera e stacca
-                 dalla tabella invece di farne parte. -->
+            <!-- Without it, on the dark theme the header strip stays black and detaches
+                 from the table instead of belonging to it. -->
             <Setter Property="Background" Value="{DynamicResource Card}" />
             <Setter Property="SeparatorBrush" Value="{DynamicResource Rule}" />
         </Style>

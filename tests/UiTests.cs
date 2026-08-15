@@ -16,13 +16,13 @@ public static class TestApp
 {
     public static AppBuilder BuildAvaloniaApp() => AppBuilder.Configure<App>()
         .UseSkia()
-        // Disegno vero e non finto: serve a poter catturare la finestra come immagine.
+        // Real drawing rather than stubbed: it is what allows capturing the window as an image.
         .UseHeadless(new AvaloniaHeadlessPlatformOptions { UseHeadlessDrawing = false });
 }
 
 /// <summary>
-/// Preme davvero i bottoni della finestra. I test su Db coprono le regole,
-/// questi coprono che l'interfaccia sia cablata a quelle regole.
+/// Actually presses the buttons of the window. The Db tests cover the rules,
+/// these cover that the interface is wired to those rules.
 /// </summary>
 public class UiTests : IDisposable
 {
@@ -48,7 +48,7 @@ public class UiTests : IDisposable
         GC.SuppressFinalize(this);
     }
 
-    // --- Appoggio -------------------------------------------------------
+    // --- Helpers --------------------------------------------------------
 
     MainWindow Open()
     {
@@ -91,7 +91,7 @@ public class UiTests : IDisposable
         return view;
     }
 
-    // --- Tema -----------------------------------------------------------
+    // --- Theme ----------------------------------------------------------
 
     [AvaloniaFact]
     public void Il_tema_si_cambia_e_se_lo_ricorda()
@@ -99,7 +99,7 @@ public class UiTests : IDisposable
         var w = Open();
         var bottone = Named<Button>(w, "Tema");
 
-        // L'icona mostra dove vai, non dove sei: nel chiaro si vede la luna.
+        // The icon shows where you are going, not where you are: in light you see the moon.
         Assert.True(Named<Avalonia.Controls.Shapes.Path>(w, "Luna").IsVisible);
         Assert.False(Named<Avalonia.Controls.Shapes.Path>(w, "Sole").IsVisible);
         Assert.Equal("Passa al tema scuro", ToolTip.GetTip(bottone));
@@ -131,12 +131,12 @@ public class UiTests : IDisposable
 
         Click(Named<Button>(w, "Tema"));
 
-        // Le schede sono costruite a mano: con un colore fisso resterebbero del tema
-        // di quando sono nate, invece di seguire quello nuovo.
+        // The cards are built by hand: with a fixed colour they would stay in the theme
+        // they were born in instead of following the new one.
         Assert.NotEqual(chiaro, numero.Foreground);
     }
 
-    // --- Libri ----------------------------------------------------------
+    // --- Books ----------------------------------------------------------
 
     [AvaloniaFact]
     public void La_finestra_si_apre_e_mostra_i_libri()
@@ -210,7 +210,7 @@ public class UiTests : IDisposable
         Assert.Equal("Almagesto", Assert.Single(righe).Title);
     }
 
-    // --- Utenti ---------------------------------------------------------
+    // --- Members --------------------------------------------------------
 
     [AvaloniaFact]
     public void La_scheda_utenti_mostra_chi_ha_libri_fuori()
@@ -225,7 +225,7 @@ public class UiTests : IDisposable
         Assert.Equal(1, utente.OpenLoans);
     }
 
-    // --- Prestiti -------------------------------------------------------
+    // --- Loans ----------------------------------------------------------
 
     [AvaloniaFact]
     public void Registro_il_rientro_dalla_scheda_prestiti()
@@ -252,12 +252,12 @@ public class UiTests : IDisposable
         var view = w.GetVisualDescendants().OfType<PrestitiView>().First();
         var loan = Named<DataGrid>(view, "Grid").ItemsSource!.Cast<Loan>().Single();
 
-        // Se questo torna falso: i DataGridTextColumn legano in TwoWay e riscrivono
-        // ReturnedAt a default(DateTime), che spegne IsOpen. Servono Mode=OneWay.
+        // If this comes back false: DataGridTextColumn binds TwoWay and writes ReturnedAt
+        // back as default(DateTime), which turns IsOpen off. Mode=OneWay is required.
         Assert.True(loan.Overdue, $"DueAt={loan.DueAt:d} ReturnedAt={loan.ReturnedAt:o}");
         Assert.Equal("In ritardo di 3 giorni", loan.Stato);
 
-        // Lo stato è scritto a parole nella sua colonna, non affidato a un simbolo.
+        // The state is spelled out in its own column, not left to a symbol.
         var stato = Named<DataGrid>(view, "Grid").GetVisualDescendants().OfType<Border>()
             .Single(b => b.Classes.Contains("pill"));
         Assert.True(stato.Classes.Contains("late"));
@@ -332,8 +332,8 @@ public class UiTests : IDisposable
         var w = Open();
         Tab(w, TabMetriche);
 
-        // La scheda numerica è cliccabile: un numero che non porta da nessuna parte
-        // costringe a rifare la ricerca a mano.
+        // The stat card is clickable: a number that leads nowhere forces the user to redo
+        // the search by hand.
         var card = Named<WrapPanel>(w, "Now").GetVisualDescendants().OfType<Border>()
             .First(b => b.Classes.Contains("clickable")
                         && b.GetVisualDescendants().OfType<TextBlock>().Any(t => t.Text == "In ritardo"));
@@ -347,7 +347,7 @@ public class UiTests : IDisposable
         Assert.Equal("Elementi", Assert.Single(Named<DataGrid>(view, "Grid").ItemsSource!.Cast<Loan>()).Title);
     }
 
-    // --- Metriche -------------------------------------------------------
+    // --- Metrics --------------------------------------------------------
 
     [AvaloniaFact]
     public void Le_metriche_si_aggiornano_cambiando_scheda()
@@ -361,23 +361,23 @@ public class UiTests : IDisposable
         Assert.Contains("Fuori adesso", testi);
         Assert.Contains("Elementi", testi);
 
-        // I numeri devono anche essere visibili: assegnare null a Foreground non lascia
-        // il colore predefinito, lo azzera, e il numero sparisce senza errori.
+        // The numbers also have to be visible: assigning null to Foreground does not leave
+        // the default colour, it clears it, and the number vanishes without any error.
         var numeri = new[] { "Now", "Cards" }
             .SelectMany(p => Named<WrapPanel>(w, p).GetVisualDescendants().OfType<TextBlock>())
             .Where(t => t.FontSize == 26).ToList();
         Assert.Equal(9, numeri.Count);
         Assert.All(numeri, n => Assert.NotNull(n.Foreground));
 
-        // La media si conta dai mesi con movimento, non dai dodici del periodo: su un
-        // archivio appena avviato un prestito nel primo mese è 1, non 0,1.
+        // The average counts the months with activity, not the twelve of the period: on a
+        // freshly started archive, one loan in the first month is 1, not 0.1.
         Assert.Equal("1", Valore(w, "Media al mese"));
         Assert.Equal("1", Valore(w, "Fuori adesso"));
     }
 
     /// <summary>
-    /// Il numero grande dentro la scheda con quell'etichetta. Cercato dentro i pannelli
-    /// delle schede e non in tutta la finestra: «Prestiti» è anche il nome di una linguetta.
+    /// The big number inside the card carrying that label. Searched inside the card panels
+    /// and not the whole window: "Prestiti" is also the name of a tab.
     /// </summary>
     static string? Valore(MainWindow w, string etichetta) =>
         new[] { "Now", "Cards" }
@@ -404,7 +404,7 @@ public class UiTests : IDisposable
         Assert.Equal("1", Valore(w, "Prestiti"));
     }
 
-    // --- Dati: import ----------------------------------------------------
+    // --- Data tab: import -------------------------------------------------
 
     [AvaloniaFact]
     public void L_import_legge_il_file_e_mostra_cosa_ha_capito()
@@ -435,7 +435,7 @@ public class UiTests : IDisposable
 
         Carica(w, "catalogo.xlsx");
 
-        // Non sparisce: senza, non ci sarebbe più modo di scegliere un altro file.
+        // It does not vanish: without it there would be no way left to pick another file.
         Assert.True(zona.IsVisible);
         Assert.Equal("catalogo.xlsx", Named<TextBlock>(zona, "DropTitle").Text);
         Assert.Contains("cambiarlo", Named<TextBlock>(zona, "DropHint").Text!);
@@ -470,8 +470,8 @@ public class UiTests : IDisposable
         var foglio = Assert.Single(Carica(w, "catalogo.xlsx").Fogli);
         Assert.False(Named<TextBlock>(w, "Found").IsVisible);
 
-        // La tendina c'è sempre, anche con un foglio solo: è lì che si corregge se
-        // abbiamo capito male, e indovinare in silenzio crea schede doppie.
+        // The dropdown is always there, even with a single sheet: that is where a wrong
+        // guess gets corrected, and guessing in silence creates duplicate records.
         Assert.Equal(SheetKinds.Books, foglio.Kind);
         Assert.True(foglio.Included);
     }
@@ -497,20 +497,20 @@ public class UiTests : IDisposable
         var w = Open();
         Tab(w, TabDati);
 
-        // Dalla lista e non dall'albero visuale: con una linguetta per foglio, solo
-        // quella selezionata è renderizzata.
+        // From the list and not from the visual tree: with one tab per sheet, only the
+        // selected one is rendered.
         var fogli = Carica(w, "multifoglio.xlsx").Fogli;
         Assert.Equal(["Appunti", "Catalogo"], fogli.Select(f => f.Sheet.Name));
         Assert.True(Named<TextBlock>(w, "Found").IsVisible);
 
-        // Da «Appunti» non si ricava niente: esce da solo, ma dicendo perché.
+        // Nothing can be drawn from "Appunti": it drops out on its own, but says why.
         Assert.True(fogli[0].Report.Empty);
         Assert.False(fogli[0].Included);
         Assert.Equal(SheetKinds.Skip, fogli[0].Kind);
         Assert.Contains("non riesco a ricavare niente", fogli[0].Messaggio!);
 
-        // Nel secondo foglio il titolo si chiama «Libro» e l'autore ha un'intestazione
-        // che nessuna lista indovinerà mai: è il motivo della mappatura per foglio.
+        // In the second sheet the title is called "Libro" and the author carries a header
+        // no list will ever guess: that is the reason for per-sheet mapping.
         Assert.True(fogli[1].Included);
         Assert.Equal(Import.FTitle, fogli[1].Choices.Single(c => c.Header == "Libro").Field);
         Assert.Equal(ColumnChoice.None, fogli[1].Choices.Single(c => c.Header == "Chi lo ha scritto").Field);
@@ -526,14 +526,14 @@ public class UiTests : IDisposable
         Carica(w, "catalogo.xlsx");
         w.UpdateLayout();
 
-        // Uno StackPanel orizzontale lo lasciava disposto con la larghezza del testo
-        // precedente: misurato giusto, tagliato a video.
+        // A horizontal StackPanel used to leave it arranged at the previous text's width:
+        // measured right, cut off on screen.
         var s = Named<TextBlock>(w, "Summary");
         Assert.True(s.Bounds.Width >= s.DesiredSize.Width,
             $"tagliato: disposto {s.Bounds.Width:0}, ne servono {s.DesiredSize.Width:0} per «{s.Text}»");
     }
 
-    // --- Dati: export ----------------------------------------------------
+    // --- Data tab: export -------------------------------------------------
 
     [AvaloniaFact]
     public void L_export_scrive_un_file_che_sappiamo_rileggere()

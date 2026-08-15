@@ -5,7 +5,7 @@ using Avalonia.Styling;
 
 namespace Alexandreia;
 
-/// <summary>Ogni scheda si ricarica quando la si apre: i dati cambiati altrove devono comparire.</summary>
+/// <summary>Every tab reloads when opened: changes made elsewhere have to show up.</summary>
 public interface IReloadable
 {
     void Reload();
@@ -34,8 +34,8 @@ public partial class MainWindow : Window
         for (var i = 0; i < views.Length; i++)
             ((TabItem)Tabs.Items[i]!).Content = views[i];
 
-        // Dalle schede numeriche si salta all'elenco già filtrato: un numero che non
-        // porta da nessuna parte costringe a rifare la ricerca a mano.
+        // The stat cards jump straight to the filtered list: a number that leads nowhere
+        // forces the user to redo the search by hand.
         metriche.ApriPrestiti += filtro =>
         {
             Tabs.SelectedIndex = Array.IndexOf(views, prestiti);
@@ -52,7 +52,7 @@ public partial class MainWindow : Window
 
     static bool Scuro => Application.Current?.ActualThemeVariant == ThemeVariant.Dark;
 
-    /// <summary>Applica il tema e se lo ricorda: un tema che si dimentica non è una scelta.</summary>
+    /// <summary>Applies the theme and remembers it: a theme that forgets is not a choice.</summary>
     void Applica(string tema, Db db)
     {
         if (Application.Current is { } app)

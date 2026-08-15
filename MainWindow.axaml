@@ -4,8 +4,8 @@
         Title="Alexandreia" Width="1240" Height="760"
         WindowStartupLocation="CenterScreen">
 
-    <!-- Il bottone del tema galleggia sul lato destro della striscia, che è spazio vuoto:
-         non merita una riga tutta sua. -->
+    <!-- The theme button floats on the right of the tab strip, which is empty space:
+         it does not deserve a row of its own. -->
     <Grid Margin="10">
         <TabControl Name="Tabs">
             <TabItem Header="Libri" />
@@ -15,8 +15,8 @@
             <TabItem Header="Dati" />
         </TabControl>
 
-        <!-- L'icona mostra dove vai, non dove sei: la luna quando c'è da passare allo scuro.
-             Da sola sarebbe ambigua, quindi il suggerimento lo dice a parole. -->
+        <!-- The icon shows where you are going, not where you are: the moon when there is
+             dark to switch to. On its own it would be ambiguous, so the tooltip spells it out. -->
         <Button Name="Tema" Classes="quiet" HorizontalAlignment="Right" VerticalAlignment="Top"
                 Margin="0,4,4,0" Padding="8,6">
             <Panel Width="18" Height="18">

@@ -4,7 +4,7 @@ using Avalonia.Layout;
 namespace Alexandreia;
 
 /// <summary>
-/// Avalonia non ha una finestra di conferma pronta. Venti righe invece di una dipendenza.
+/// Avalonia has no built-in confirmation dialog. Twenty lines instead of a dependency.
 /// </summary>
 public static class Dialogs
 {

@@ -5,14 +5,14 @@ using Avalonia.Markup.Xaml.MarkupExtensions;
 
 namespace Alexandreia;
 
-/// <summary>Riga con barra: la larghezza la calcola la vista, non il database.</summary>
+/// <summary>A row with a bar: the width is computed by the view, not by the database.</summary>
 public record Bar(string Label, string Sub, string Note, int Count, double Width);
 
 public partial class MetricheView : UserControl, IReloadable
 {
     const double BarMax = 200;
 
-    /// <summary>Periodi pronti, più l'ultimo che apre i due calendari.</summary>
+    /// <summary>Ready-made periods, plus a last one that opens the two date pickers.</summary>
     static readonly string[] Periodi =
     [
         "Ultimi 30 giorni", "Ultimi 3 mesi", "Ultimi 6 mesi", "Ultimi 12 mesi",
@@ -23,7 +23,7 @@ public partial class MetricheView : UserControl, IReloadable
 
     readonly Db _db = null!;
 
-    /// <summary>Le schede «Fuori adesso» e «In ritardo» portano all'elenco già filtrato.</summary>
+    /// <summary>The "out now" and "overdue" cards lead to the already filtered list.</summary>
     public event Action<string>? ApriPrestiti;
 
     public MetricheView() => InitializeComponent();
@@ -69,7 +69,7 @@ public partial class MetricheView : UserControl, IReloadable
             ? "dal primo prestito registrato"
             : $"dal {da:dd/MM/yyyy} al {(a ?? DateTime.Today.AddDays(1)).AddDays(-1):dd/MM/yyyy}";
 
-        // --- Adesso: lo stato della biblioteca, indipendente dal periodo ---
+        // --- Now: the state of the library, independent of the period ---
         var s = _db.Stats();
         Now.Children.Clear();
         Now.Children.Add(Scheda(s.Books, "Libri"));
@@ -78,7 +78,7 @@ public partial class MetricheView : UserControl, IReloadable
         Now.Children.Add(Scheda(s.Overdue, "In ritardo", allarme: s.Overdue > 0, vai: Filtri.Ritardo));
         Now.Children.Add(Scheda(s.NeverLent, "Mai usciti"));
 
-        // --- Nel periodo, con il confronto sulla finestra precedente di pari durata ---
+        // --- Within the period, compared against the preceding window of equal length ---
         var ora = _db.InWindow(da, a);
         var months = _db.LoansByMonth(da, a);
         var mesi = Mesi(da, a, months);
@@ -105,7 +105,7 @@ public partial class MetricheView : UserControl, IReloadable
         NoNever.IsVisible = never.Count == 0;
     }
 
-    /// <summary>Confronto con la finestra precedente di pari durata. Null se non ha senso.</summary>
+    /// <summary>Comparison with the preceding window of equal length. Null when meaningless.</summary>
     string? Delta(DateTime da, DateTime? a, int adesso)
     {
         if (da == DateTime.MinValue) return null;
@@ -120,9 +120,9 @@ public partial class MetricheView : UserControl, IReloadable
     }
 
     /// <summary>
-    /// Mesi coperti, contati dal primo con movimento se è più recente dell'inizio del
-    /// periodo: su un archivio appena avviato dividere comunque per dodici darebbe una
-    /// media finta — un prestito nel primo mese è uno al mese, non 0,1.
+    /// Months covered, counted from the first one with activity when that is later than the
+    /// start of the period: on a freshly started archive, dividing by twelve anyway would
+    /// give a fake average — one loan in the first month is one a month, not 0.1.
     /// </summary>
     static int Mesi(DateTime da, DateTime? a, List<MonthCount> months)
     {
@@ -136,8 +136,8 @@ public partial class MetricheView : UserControl, IReloadable
     }
 
     /// <summary>
-    /// Colore da risorsa dinamica e non risolto una volta sola: le schede sono costruite
-    /// a mano, e con un colore fisso resterebbero del tema di quando sono nate.
+    /// Colour from a dynamic resource rather than resolved once: the cards are built by
+    /// hand, and with a fixed colour they would stay in the theme they were born in.
     /// </summary>
     static TextBlock Testo(string testo, double corpo, string colore) =>
         new TextBlock { Text = testo, FontSize = corpo }
@@ -187,7 +187,7 @@ public partial class MetricheView : UserControl, IReloadable
 
 static class Tinte
 {
-    /// <summary>Lega il colore alla risorsa, così segue il tema invece di restare fisso.</summary>
+    /// <summary>Binds the colour to the resource, so it follows the theme instead of freezing.</summary>
     public static TextBlock Tinta(this TextBlock t, string risorsa)
     {
         t[!TextBlock.ForegroundProperty] = new DynamicResourceExtension(risorsa);

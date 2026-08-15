@@ -9,16 +9,16 @@
     <AvaloniaNameGeneratorIsEnabled>true</AvaloniaNameGeneratorIsEnabled>
   </PropertyGroup>
 
-  <!-- SkiaSharp e HarfBuzz spediscono i .pdb nativi accanto alle librerie: sono 105 MB di
-       simboli che finirebbero nel pacchetto consegnato. Arrivano come asset nativi, quindi
-       non basta DebugType=none: vanno tolti dalla lista di pubblicazione. -->
+  <!-- SkiaSharp and HarfBuzz ship their native .pdb next to the libraries: 105 MB of symbols
+       that would end up in the delivered package. They arrive as native assets, so
+       DebugType=none is not enough: they must be dropped from the publish list. -->
   <Target Name="RimuoviPdbDalPacchetto" AfterTargets="ComputeResolvedFilesToPublishList" Condition="'$(Configuration)' == 'Release'">
     <ItemGroup>
       <ResolvedFileToPublish Remove="@(ResolvedFileToPublish)" Condition="'%(Extension)' == '.pdb'" />
     </ItemGroup>
   </Target>
 
-  <!-- tests/ è un progetto a sé: tenerlo fuori dal glob -->
+  <!-- tests/ is a project of its own: keep it out of the glob -->
   <ItemGroup>
     <Compile Remove="tests\**" />
     <Content Remove="tests\**" />

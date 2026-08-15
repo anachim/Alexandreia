@@ -5,8 +5,8 @@ using Microsoft.Data.Sqlite;
 namespace Alexandreia;
 
 /// <summary>
-/// Un libro = una copia fisica. Chi ha tre copie mette tre schede: la deduplica
-/// e le copie multiple stanno a chi possiede i dati, non a noi.
+/// One book = one physical copy. Three copies means three records: deduplication and
+/// copy counting are the data owner's problem, not ours.
 /// </summary>
 public class Book
 {
@@ -18,12 +18,12 @@ public class Book
     public string? Notes { get; set; }
     public bool Archived { get; set; }
 
-    // Calcolate dalla query, non sono colonne.
+    // Computed by the query, not columns.
     public bool IsAvailable { get; set; }
     public string? LentTo { get; set; }
 }
 
-/// <summary>Chi prende in prestito. Le omonimie le gestisce la biblioteca, con la nota.</summary>
+/// <summary>Whoever borrows. Same-name people are the library's problem, solved with the note.</summary>
 public class Member
 {
     public long Id { get; set; }
@@ -40,15 +40,15 @@ public class Member
     public string FullName => $"{LastName} {FirstName}".Trim();
 
     /// <summary>
-    /// Come compare nella tendina del prestito: senza la nota, due omonimi sono
-    /// indistinguibili proprio nel momento in cui bisogna sceglierne uno.
+    /// How it reads in the lending dropdown: without the note, two people with the same
+    /// name are indistinguishable exactly when one of them has to be picked.
     /// </summary>
     public string Label => Notes is { Length: > 0 } n
         ? $"{FullName} — {(n.Length > 40 ? n[..39] + "…" : n)}"
         : FullName;
 }
 
-/// <summary>Che prestiti mostrare. Le etichette italiane stanno nella vista.</summary>
+/// <summary>Which loans to show. The Italian labels live in the view.</summary>
 public static class Filtri
 {
     public const string Fuori = "fuori";
@@ -66,7 +66,7 @@ public class Loan
     public DateTime DueAt { get; set; }
     public DateTime? ReturnedAt { get; set; }
 
-    // Dal join.
+    // From the join.
     public string Title { get; set; } = "";
     public string Author { get; set; } = "";
     public string MemberName { get; set; } = "";
@@ -78,15 +78,15 @@ public class Loan
 
     public string DueLabel => DueAt.ToString("dd/MM/yyyy");
 
-    /// <summary>Come sta questo prestito, detto a parole. Porta anche la data del rientro.</summary>
+    /// <summary>How this loan stands, spelled out. Carries the return date too.</summary>
     public string Stato => !IsOpen ? $"Rientrato il {ReturnedAt:dd/MM/yyyy}"
         : Overdue ? $"In ritardo di {LateDays} {(LateDays == 1 ? "giorno" : "giorni")}"
         : "In regola";
 }
 
-// Proprietà settabili, non record posizionali: SQLite non dichiara il tipo delle colonne calcolate
-// (COUNT, AVG) e su un risultato vuoto le riporta come byte[]. Dapper pretende il tipo esatto nei
-// costruttori, mentre sulle proprietà converte da sé.
+// Settable properties, not positional records: SQLite declares no type for computed columns
+// (COUNT, AVG) and reports them as byte[] on an empty result. Dapper demands the exact type in
+// constructors, while on properties it converts by itself.
 public record Summary
 {
     public int Books { get; set; }
@@ -114,7 +114,7 @@ public record MonthCount
 
 public class Db
 {
-    /// <summary>Alzare quando lo schema cambia in modo incompatibile.</summary>
+    /// <summary>Bump when the schema changes in an incompatible way.</summary>
     public const int SchemaVersion = 2;
 
     const string Schema = """
@@ -154,10 +154,10 @@ public class Db
         );
         """;
 
-    /// <summary>Preferenze dell'applicazione, tenute accanto ai dati invece che in un file a parte.</summary>
+    /// <summary>App preferences, kept next to the data instead of in a separate file.</summary>
     public const string TemaKey = "tema";
 
-    // Un libro è una copia sola: è libero se non ha un prestito ancora aperto.
+    // A book is a single copy: it is free when it has no still-open loan.
     const string AvailableExpr =
         "NOT EXISTS (SELECT 1 FROM Loans l WHERE l.BookId = b.Id AND l.ReturnedAt IS NULL)";
 
@@ -184,8 +184,8 @@ public class Db
 
         using var c = Open();
 
-        // Un archivio di uno schema precedente non va aperto alla cieca: meglio dirlo
-        // che far fallire le query una alla volta.
+        // An archive from an older schema must not be opened blindly: better to say so
+        // than to let the queries fail one at a time.
         var esiste = c.ExecuteScalar<long>(
             "SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name='Books'") > 0;
         var versione = c.ExecuteScalar<long>("PRAGMA user_version");
@@ -205,7 +205,7 @@ public class Db
         return c;
     }
 
-    // --- Preferenze -----------------------------------------------------
+    // --- Preferences ----------------------------------------------------
 
     public string? Setting(string key)
     {
@@ -220,12 +220,12 @@ public class Db
                   "ON CONFLICT(Key) DO UPDATE SET Value = @value", new { key, value });
     }
 
-    // --- Libri ---------------------------------------------------------
+    // --- Books ----------------------------------------------------------
 
     public List<Book> Books(string? search = null, bool onlyAvailable = false, int limit = 500)
     {
         using var c = Open();
-        // ponytail: LIKE su qualche migliaio di righe è istantaneo. FTS5 solo oltre le ~50k.
+        // ponytail: LIKE over a few thousand rows is instant. FTS5 only past ~50k.
         return c.Query<Book>($"""
             SELECT b.Id, b.Title, b.Author, b.Notes,
                    {AvailableExpr} AS IsAvailable,
@@ -265,7 +265,7 @@ public class Db
         return b.Id;
     }
 
-    /// <summary>Archivia il libro. Rifiuta se è fuori in prestito. Lo storico resta.</summary>
+    /// <summary>Archives the book. Refuses while it is out on loan. The history stays.</summary>
     public bool ArchiveBook(long id)
     {
         using var c = Open();
@@ -275,7 +275,7 @@ public class Db
             """, new { id }) == 1;
     }
 
-    // --- Utenti --------------------------------------------------------
+    // --- Members --------------------------------------------------------
 
     public List<Member> Members(string? search = null, int limit = 500)
     {
@@ -309,7 +309,7 @@ public class Db
         return m.Id;
     }
 
-    /// <summary>Archivia l'utente. Rifiuta se ha ancora libri fuori.</summary>
+    /// <summary>Archives the member. Refuses while they still have books out.</summary>
     public bool ArchiveMember(long id)
     {
         using var c = Open();
@@ -319,14 +319,14 @@ public class Db
             """, new { id }) == 1;
     }
 
-    // --- Prestiti ------------------------------------------------------
+    // --- Loans ----------------------------------------------------------
 
-    /// <summary>Registra un prestito. False se il libro è già fuori.</summary>
+    /// <summary>Records a loan. False when the book is already out.</summary>
     public bool Lend(long bookId, long memberId, DateTime dueAt)
     {
         using var c = Open();
-        // Controllo e inserimento in un'unica istruzione: niente finestra in cui lo stesso
-        // libro esce due volte.
+        // Check and insert in a single statement: no window in which the same book
+        // goes out twice.
         return c.Execute("""
             INSERT INTO Loans (BookId, MemberId, LoanedAt, DueAt)
             SELECT @bookId, @memberId, @now, @dueAt
@@ -336,7 +336,7 @@ public class Db
             """, new { bookId, memberId, now = DateTime.Now, dueAt = dueAt.Date }) == 1;
     }
 
-    /// <summary>Sposta la scadenza di un prestito aperto. False se era già rientrato.</summary>
+    /// <summary>Moves the due date of an open loan. False when it was already returned.</summary>
     public bool Extend(long loanId, DateTime newDue)
     {
         using var c = Open();
@@ -344,7 +344,7 @@ public class Db
             new { loanId, due = newDue.Date }) == 1;
     }
 
-    /// <summary>Registra il rientro. False se quel prestito era già chiuso.</summary>
+    /// <summary>Records the return. False when that loan was already closed.</summary>
     public bool Return(long loanId)
     {
         using var c = Open();
@@ -379,7 +379,7 @@ public class Db
             .ToList();
     }
 
-    // --- Metriche ------------------------------------------------------
+    // --- Metrics --------------------------------------------------------
 
     public Summary Stats()
     {
@@ -422,7 +422,7 @@ public class Db
             """, new { since, until }).ToList();
     }
 
-    /// <summary>Quello che è successo dentro una finestra, per poterla confrontare con la precedente.</summary>
+    /// <summary>What happened inside a window, so it can be compared with the previous one.</summary>
     public record Window
     {
         public int Loans { get; set; }
@@ -456,9 +456,9 @@ public class Db
             """, new { limit }).ToList();
     }
 
-    // --- Import ed export ----------------------------------------------
+    // --- Import and export ----------------------------------------------
 
-    /// <summary>Riga del file di scambio: un libro e, se c'è, chi ce l'ha adesso.</summary>
+    /// <summary>A row of the exchange file: a book and, if any, who has it right now.</summary>
     public class ExportRow
     {
         public string Title { get; set; } = "";
@@ -487,22 +487,22 @@ public class Db
     }
 
     /// <summary>
-    /// Scrive le righe lette da un foglio: i libri, e per quelle con una persona crea
-    /// l'utente se non c'è e apre il prestito. Tutto in una transazione: se qualcosa non
-    /// torna, l'archivio resta quello di prima invece di restare a metà.
+    /// Writes the rows read from a sheet: the books, and for those carrying a person it
+    /// creates the member if missing and opens the loan. All in one transaction: if
+    /// anything is off, the archive stays as it was instead of ending up half written.
     /// </summary>
-    /// <param name="replace">Svuota l'archivio prima di scrivere (ripristino da backup).</param>
+    /// <param name="replace">Empties the archive before writing (restore from backup).</param>
     public int Apply(IEnumerable<ImportedRow> rows, bool replace = false) =>
         ApplyAll(rows, [], [], replace).Books;
 
     public record ApplyCounts(int Books, int OpenLoans, int History, int HistorySkipped, int Members);
 
     /// <summary>
-    /// Carica i tre fogli: anagrafica, libri e storico. L'anagrafica va per prima, così i
-    /// nomi che compaiono in «Prestato a» ritrovano la persona giusta con cognome e nome
-    /// separati invece di crearne una nuova col nome tutto appiccicato nel cognome.
-    /// Le righe dello storico non creano libri: si agganciano per titolo + autore.
-    /// Tutto in una transazione sola, così un file mezzo sbagliato non lascia mezzo archivio.
+    /// Loads the three sheets: members, books and history. Members go first, so the names
+    /// appearing under "Prestato a" find the right person with first and last name kept
+    /// apart, instead of creating a new one with the whole name glued into the surname.
+    /// History rows create no books: they attach by title + author.
+    /// All in a single transaction, so a half-broken file leaves no half-written archive.
     /// </summary>
     public ApplyCounts ApplyAll(
         IEnumerable<ImportedRow> archivio,
@@ -533,9 +533,9 @@ public class Db
             utenti++;
         }
 
-        // Con più copie dello stesso titolo lo storico finisce tutto sulla prima: quale
-        // delle copie fisiche fosse fuori nel 2019 non lo sa più nessuno, e ai fini delle
-        // metriche — che raggruppano per libro — il conto torna comunque.
+        // With several copies of the same title the history all lands on the first one:
+        // which physical copy was out in 2019 is nobody's knowledge any more, and for the
+        // metrics — which group by book — the count adds up all the same.
         var libri = replace
             ? []
             : c.Query<Book>("SELECT Id, Title, Author FROM Books", transaction: tx)
@@ -548,8 +548,8 @@ public class Db
             var chiave = NameKey(persona);
             if (persone.TryGetValue(chiave, out var id)) return id;
 
-            // Il nome intero finisce nel cognome: «Rossi Mario» e «Mario Rossi» sono
-            // indistinguibili, e sbagliare a spezzarli è peggio che non spezzarli.
+            // The whole name lands in the surname: "Rossi Mario" and "Mario Rossi" are
+            // indistinguishable, and splitting them wrong is worse than not splitting.
             id = c.ExecuteScalar<long>("""
                 INSERT INTO Members (FirstName, LastName, Notes)
                 VALUES ('', @persona, @note) RETURNING Id
@@ -592,7 +592,7 @@ public class Db
         int storici = 0, saltati = 0;
         foreach (var row in storico)
         {
-            // I prestiti ancora aperti sono già arrivati dal foglio dei libri.
+            // Still-open loans already arrived from the books sheet.
             if (row.ReturnedAt is null || !row.HasLoan) continue;
 
             if (!libri.TryGetValue(NameKey($"{row.Book.Title}|{row.Book.Author}"), out var bookId))

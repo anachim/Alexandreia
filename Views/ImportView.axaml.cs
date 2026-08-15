@@ -5,9 +5,9 @@ using Avalonia.Platform.Storage;
 namespace Alexandreia;
 
 /// <summary>
-/// Scambio dati: si esporta l'archivio in un Excel, e si ricarica lo stesso formato
-/// (o l'Excel che avevano già loro). L'import lavora in due tempi — si guarda foglio per
-/// foglio cosa abbiamo capito, e solo dopo si scrive.
+/// Data exchange: the archive is exported to an Excel file, and the same format is loaded
+/// back (or the Excel they already had). The import works in two steps — sheet by sheet you
+/// look at what we understood, and only then it writes.
 /// </summary>
 public partial class ImportView : UserControl, IReloadable
 {
@@ -22,7 +22,7 @@ public partial class ImportView : UserControl, IReloadable
 
         DoExport.Click += async (_, _) => await SaveExport();
         DropZone.Click += async (_, _) => await PickFile();
-        // Handled: senza, il clic arriverebbe anche al riquadro e riaprirebbe la scelta file.
+        // Handled: without it the click would reach the box below and reopen the file picker.
         CloseFile.Click += (_, e) => { e.Handled = true; Chiudi(); };
         Apply.Click += async (_, _) => await DoImport();
         Replace.IsCheckedChanged += (_, _) => UpdateTotal();
@@ -33,7 +33,7 @@ public partial class ImportView : UserControl, IReloadable
 
     public void Reload() { }
 
-    /// <summary>I fogli che verranno caricati, nell'ordine del file.</summary>
+    /// <summary>The sheets that will be loaded, in file order.</summary>
     public IEnumerable<SheetMapping> Selected => _sheets.Where(s => s.Included);
 
     bool Replacing => Replace.IsChecked == true;
@@ -66,7 +66,7 @@ public partial class ImportView : UserControl, IReloadable
         }
     }
 
-    // --- Scelta del file -------------------------------------------------
+    // --- Picking the file ------------------------------------------------
 
     async Task PickFile()
     {
@@ -93,7 +93,7 @@ public partial class ImportView : UserControl, IReloadable
             Load(path);
     }
 
-    /// <summary>I fogli del file, nell'ordine in cui stanno dentro.</summary>
+    /// <summary>The sheets of the file, in the order they sit inside it.</summary>
     public IReadOnlyList<SheetMapping> Fogli => _sheets;
 
     public void Load(string path)
@@ -127,21 +127,21 @@ public partial class ImportView : UserControl, IReloadable
         }
         Sheets.SelectedIndex = 0;
 
-        // Con un foglio solo non c'è niente da annunciare: la schermata resta semplice.
+        // With a single sheet there is nothing to announce: the screen stays plain.
         Found.IsVisible = fogli.Count > 1;
         Found.Text = $"{fogli.Count} fogli nel file: controllali uno per uno qui sotto.";
         Actions.IsVisible = ReplaceBox.IsVisible = true;
         UpdateTotal();
     }
 
-    // Che cosa contiene un foglio lo dice la tendina, non più un'ipotesi sulle colonne.
+    // What a sheet holds is stated by the dropdown, no longer a guess about the columns.
     IEnumerable<SheetMapping> Anagrafica => Selected.Where(s => s.Kind == SheetKinds.Members);
     IEnumerable<SheetMapping> Archivio => Selected.Where(s => s.Kind == SheetKinds.Books);
     IEnumerable<SheetMapping> Storico => Selected.Where(s => s.Kind == SheetKinds.History);
 
     /// <summary>
-    /// Il riquadro resta al suo posto anche dopo: se sparisse, non ci sarebbe più modo
-    /// di scegliere un altro file.
+    /// The box stays put afterwards too: if it vanished, there would be no way left to
+    /// pick another file.
     /// </summary>
     void Caricato(string path)
     {
@@ -151,8 +151,8 @@ public partial class ImportView : UserControl, IReloadable
     }
 
     /// <summary>
-    /// Chiude il file e riporta la scheda com'era. Serve soprattutto dopo un import:
-    /// lasciare a schermo un file già caricato invita a premere Importa una seconda volta.
+    /// Closes the file and puts the tab back as it was. Useful above all after an import:
+    /// leaving a loaded file on screen invites pressing Import a second time.
     /// </summary>
     public void Chiudi()
     {
@@ -176,7 +176,7 @@ public partial class ImportView : UserControl, IReloadable
         var storici = Storico.Sum(s => s.ChiusiNelloStorico);
         var utenti = Anagrafica.Sum(s => s.Report.Members.Count);
 
-        // Quando cancella, il bottone lo dice col nome e col colore, e la casella si accende.
+        // When it deletes, the button says so by name and by colour, and the box lights up.
         Apply.Content = Replacing ? "Sostituisci tutto" : "Importa";
         Apply.Classes.Set("primary", !Replacing);
         Apply.Classes.Set("danger", Replacing);
@@ -201,7 +201,7 @@ public partial class ImportView : UserControl, IReloadable
         Apply.IsEnabled = libri > 0 || storici > 0 || utenti > 0;
     }
 
-    // --- Scrittura -------------------------------------------------------
+    // --- Writing ---------------------------------------------------------
 
     async Task DoImport()
     {
@@ -214,7 +214,7 @@ public partial class ImportView : UserControl, IReloadable
 
         if (Replacing)
         {
-            // La sola operazione irreversibile del programma: va chiesta per nome.
+            // The only irreversible operation in the program: it has to be asked by name.
             if (!await Dialogs.Confirm(owner,
                     "Sto per cancellare tutto l'archivio — libri, utenti e storico dei prestiti — " +
                     $"e rimetterci dentro i {archivio.Count} libri di questo file.\n\n" +

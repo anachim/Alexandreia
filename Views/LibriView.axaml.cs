@@ -17,7 +17,7 @@ public partial class LibriView : UserControl, IReloadable
     {
         _db = db;
         Grid.ItemsSource = _books;
-        // Label e non FullName: con due omonimi la nota è l'unico modo di distinguerli.
+        // Label and not FullName: with two same-name people the note is the only way to tell them apart.
         Person.DisplayMemberBinding = new Avalonia.Data.Binding(nameof(Member.Label));
 
         Search.TextChanged += (_, _) => Reload();
@@ -49,7 +49,7 @@ public partial class LibriView : UserControl, IReloadable
 
     static Book Row(object? sender) => (Book)((Control)sender!).Tag!;
 
-    // --- Prestito -------------------------------------------------------
+    // --- Lending --------------------------------------------------------
 
     void OnLend(object? sender, RoutedEventArgs e)
     {
@@ -98,7 +98,7 @@ public partial class LibriView : UserControl, IReloadable
         Reload();
     }
 
-    // --- Scheda e archiviazione -----------------------------------------
+    // --- Record and archiving -------------------------------------------
 
     async void OnEdit(object? sender, RoutedEventArgs e) => await EditBook(Row(sender));
 

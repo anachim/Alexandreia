@@ -6,7 +6,7 @@ namespace Alexandreia;
 
 public partial class PrestitiView : UserControl, IReloadable
 {
-    /// <summary>Etichette della tendina, in ordine, e il filtro che ognuna attiva.</summary>
+    /// <summary>Dropdown labels, in order, and the filter each one turns on.</summary>
     static readonly (string Label, string Filter)[] Filtri =
     [
         ("Fuori adesso", Alexandreia.Filtri.Fuori),
@@ -37,7 +37,7 @@ public partial class PrestitiView : UserControl, IReloadable
 
     string Selected => Filtri[Math.Max(0, Filtro.SelectedIndex)].Filter;
 
-    /// <summary>Apre la scheda già filtrata: la usano le schede numeriche delle metriche.</summary>
+    /// <summary>Opens the tab already filtered: used by the metrics stat cards.</summary>
     public void Mostra(string filtro)
     {
         var i = Array.FindIndex(Filtri, f => f.Filter == filtro);
@@ -74,14 +74,14 @@ public partial class PrestitiView : UserControl, IReloadable
         Reload();
     }
 
-    // --- Proroga --------------------------------------------------------
+    // --- Extension ------------------------------------------------------
 
     void OnExtend(object? sender, RoutedEventArgs e)
     {
         _extending = (Loan)((Control)sender!).Tag!;
         ExtendTitle.Text = $"«{_extending.Title}» a {_extending.MemberName}";
-        // Parte da oggi più i soliti giorni, non dalla scadenza vecchia: chi prolunga
-        // un libro in ritardo vuole altro tempo da adesso, non da un mese fa.
+        // Starts from today plus the usual days, not from the old due date: whoever extends
+        // an overdue book wants more time from now, not from a month ago.
         NewDue.SelectedDate = DateTime.Today.AddDays(Import.DefaultLoanDays);
         ExtendPanel.IsVisible = true;
         Message.IsVisible = false;

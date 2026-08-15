@@ -25,7 +25,7 @@ public partial class UtenteDialog : Window
 
     void TrySave()
     {
-        // La validazione riusa gli attributi su Member: la regola sta in un posto solo.
+        // Validation reuses the attributes on Member: the rule lives in one place only.
         var candidato = new Member
         {
             Id = _member.Id,

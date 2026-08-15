@@ -27,9 +27,9 @@
 
         <TextBlock Name="Empty" DockPanel.Dock="Bottom" Classes="muted" Margin="0,10,0,0" IsVisible="False" />
 
-        <!-- Mode=OneWay: i DataGridTextColumn riscrivono nel modello anche con IsReadOnly. -->
-        <!-- Larghezze fisse e colonne ridimensionabili: con una colonna elastica la tabella
-             si stringe fino a rendere illeggibili i titoli invece di far scorrere. -->
+        <!-- Mode=OneWay: DataGridTextColumn writes back into the model even with IsReadOnly.
+             Fixed widths and resizable columns: with a star-sized column the table squeezes
+             titles into illegibility instead of scrolling. -->
         <DataGrid Name="Grid" AutoGenerateColumns="False" IsReadOnly="True" x:DataType="m:Book"
                   GridLinesVisibility="Horizontal" CanUserSortColumns="True" CanUserResizeColumns="True">
             <DataGrid.Columns>

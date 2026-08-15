@@ -3,12 +3,11 @@ using ClosedXML.Excel;
 namespace Alexandreia;
 
 /// <summary>
-/// Export in un .xlsx con le stesse colonne che sappiamo importare: un archivio si porta
-/// da un PC all'altro con un file che resta leggibile e stampabile, senza Id né codici.
+/// Export to an .xlsx with the same columns we can import: an archive moves from one PC
+/// to another in a file that stays readable and printable, with no ids or codes.
 ///
-/// Cosa NON porta con sé, per scelta del formato: lo storico dei prestiti già rientrati
-/// (quindi le metriche ripartono da zero sul PC di destinazione) e le persone che al
-/// momento non hanno niente fuori.
+/// Three sheets: the books with who holds them now, the whole loan history, and the
+/// member list. Together they carry everything the destination needs.
 /// </summary>
 public static class Export
 {
@@ -59,8 +58,8 @@ public static class Export
         Date(ws, 6, 7);
         Chiudi(ws);
 
-        // Secondo foglio: tutti i prestiti, anche quelli già rientrati. Una riga per
-        // prestito, non due eventi: se «Rientrato il» è vuoto, quel libro è ancora fuori.
+        // Second sheet: every loan, returned ones included. One row per loan, not two
+        // events: when "Rientrato il" is empty, that book is still out.
         var st = wb.AddWorksheet(SheetHistory);
         Intestazioni(st, HistoryHeaders);
         for (var r = 0; r < storico.Count; r++)
@@ -77,9 +76,9 @@ public static class Export
         Date(st, 4, 6);
         Chiudi(st);
 
-        // Terzo foglio: l'anagrafica intera, anche chi al momento non ha niente fuori —
-        // senza, quelle persone si perderebbero nel passaggio da un PC all'altro. Cognome
-        // e nome restano separati, e al ricarico non finiscono appiccicati insieme.
+        // Third sheet: the whole member list, including whoever currently has nothing out —
+        // without it, those people would be lost moving from one PC to another. First and
+        // last name stay apart, so reloading does not glue them together.
         var ut = wb.AddWorksheet(SheetMembers);
         Intestazioni(ut, MemberHeaders);
         for (var r = 0; r < utenti.Count; r++)
@@ -102,7 +101,7 @@ public static class Export
         ws.Row(1).Style.Font.Bold = true;
     }
 
-    // Le date come date vere, non come testo: chi apre il file deve poterci filtrare.
+    // Dates as real dates, not text: whoever opens the file has to be able to filter on them.
     static void Date(IXLWorksheet ws, int da, int a)
     {
         for (var i = da; i <= a; i++) ws.Column(i).Style.DateFormat.Format = "dd/MM/yyyy";

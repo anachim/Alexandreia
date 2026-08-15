@@ -8,8 +8,8 @@ namespace Alexandreia;
 public record ColumnInfo(int Index, string Header, int Filled, string? MappedTo, string[] Samples);
 
 /// <summary>
-/// Una riga del foglio: il libro e, se c'è, a chi è prestato.
-/// Nel foglio dello storico il libro non è da creare, è la chiave per ritrovarlo.
+/// A row of the sheet: the book and, if any, who it is lent to.
+/// In the history sheet the book is not to be created, it is the key to find it again.
 /// </summary>
 public class ImportedRow
 {
@@ -37,30 +37,30 @@ public record ImportReport
     public List<Book> Books => [.. Rows.Select(r => r.Book)];
     public int Loans => Rows.Count(r => r.HasLoan);
 
-    /// <summary>Se sono state costruite persone invece che libri.</summary>
+    /// <summary>Whether people were built instead of books.</summary>
     public bool IsMembers { get; init; }
 
     /// <summary>
-    /// Ipotesi sul tipo di foglio, dalle colonne: «Cognome» fa pensare a un'anagrafica,
-    /// «Rientrato il» allo storico. È solo il valore predefinito della tendina — la parola
-    /// finale è dell'utente, perché indovinare male qui crea schede doppie in silenzio.
+    /// A guess at the sheet type, from the columns: "Cognome" suggests a member list,
+    /// "Rientrato il" the history. It is only the dropdown's default value — the final say
+    /// is the user's, because guessing wrong here creates duplicate records in silence.
     /// </summary>
     public bool LooksLikeMembers => Columns.Any(c => c.MappedTo == Import.FLastName);
     public bool LooksLikeHistory => !LooksLikeMembers && Columns.Any(c => c.MappedTo == Import.FReturnedAt);
 
-    /// <summary>Niente da caricare.</summary>
+    /// <summary>Nothing to load.</summary>
     public bool Empty => Rows.Count == 0 && Members.Count == 0;
 }
 
 /// <summary>
-/// Lettura di un foglio Excel in due tempi: prima si guarda cosa c'e', poi si scrive.
-/// ReadWorkbook e' l'unica parte che tocca il disco; Plan e' pura e lavora su matrici di
-/// celle, cosi' la parte che puo' sbagliare e' testabile senza un .xlsx di prova.
+/// Reading an Excel sheet in two steps: first you look at what is there, then you write.
+/// ReadWorkbook is the only part touching the disk; Plan is pure and works on cell
+/// matrices, so the part that can get things wrong is testable without a sample .xlsx.
 ///
-/// E' anche il formato in cui esportiamo: stesse colonne, cosi' un archivio si porta da un
-/// PC all'altro con un file che resta leggibile.
+/// It is also the format we export: same columns, so an archive moves from one PC to
+/// another in a file that stays readable.
 ///
-/// Nessuna deduplica: i libri si caricano come si trovano, una riga una scheda.
+/// No deduplication: books are loaded as found, one row one record.
 /// </summary>
 public static class Import
 {
@@ -75,12 +75,12 @@ public static class Import
     public const string FLastName = "Cognome";
     public const string FFirstName = "Nome";
 
-    /// <summary>Quanti giorni dura un prestito importato che non porta con sé una scadenza.</summary>
+    /// <summary>How many days an imported loan lasts when it carries no due date of its own.</summary>
     public const int DefaultLoanDays = 30;
 
-    // Riconoscimento per corrispondenza esatta dell'intestazione, niente euristiche furbe:
-    // una colonna mappata sul campo sbagliato su 1400 righe non te ne accorgi finche' non e' tardi.
-    // Un typo tipo "Titollo" non lo prendera' mai nessuna lista: per quello c'e' la tendina.
+    // Header matching is exact, no clever heuristics: a column mapped to the wrong field
+    // across 1400 rows goes unnoticed until it is too late. A typo like "Titollo" will
+    // never be caught by any list: that is what the dropdown is for.
     static readonly (string Field, string[] Names)[] Synonyms =
     [
         (FTitle,       ["titolo", "title", "opera", "libro", "volume", "denominazione", "descrizione"]),
@@ -100,12 +100,13 @@ public static class Import
 
     public static readonly string[] Fields = [.. Synonyms.Select(s => s.Field)];
 
-    // --- Lettura del file (unica parte che tocca il disco) ---------------
+    // --- Reading the file (the only part touching the disk) --------------
 
     public record SheetData(string Name, List<object?[]> Rows);
 
     /// <summary>
-    /// Legge tutti i fogli in una passata: quale sia quello buono lo decide chi guarda, non noi.
+    /// Reads every sheet in one pass: which one is the good one is decided by whoever
+    /// looks at it, not by us.
     /// </summary>
     public static List<SheetData> ReadWorkbook(string path)
     {
@@ -130,13 +131,13 @@ public static class Import
         return sheets;
     }
 
-    // --- Analisi e conversione (pura, testabile) -------------------------
+    // --- Analysis and conversion (pure, testable) ------------------------
 
     /// <param name="overrides">
-    /// Correzioni manuali intestazione -> campo. Un valore vuoto significa "non importare".
+    /// Manual header -> field corrections. An empty value means "do not import".
     /// </param>
     /// <param name="asMembers">
-    /// Forza il foglio a essere (o non essere) un'anagrafica. Null = decidilo dalle colonne.
+    /// Forces the sheet to be (or not be) a member list. Null = decide it from the columns.
     /// </param>
     public static ImportReport Plan(
         IReadOnlyList<object?[]> rows,
@@ -148,8 +149,8 @@ public static class Import
         if (rows.Count == 0)
             return new ImportReport { Sheet = sheet, Warnings = ["Il foglio non contiene niente."] };
 
-        // L'intestazione non e' per forza la prima riga: sopra ci finiscono titoli e righe vuote.
-        // Prendo, fra le prime 10, quella che riconosce piu' campi.
+        // The header is not necessarily the first row: titles and blank rows end up above it.
+        // Among the first 10, take the one that recognises the most fields.
         var headerRow = 0;
         var best = -1;
         for (var r = 0; r < Math.Min(10, rows.Count); r++)
@@ -164,7 +165,7 @@ public static class Import
         for (var i = 0; i < headers.Length; i++)
         {
             var field = Map(Text(headers[i]), overrides);
-            // Se due colonne puntano allo stesso campo tiene la prima e lo segnala.
+            // If two columns point at the same field, keep the first and say so.
             if (field is not null && !claimed.Add(field))
             {
                 warnings.Add($"Colonna «{Text(headers[i])}» ignorata: {field} è già preso da un'altra colonna.");
@@ -205,8 +206,8 @@ public static class Import
                 return i >= 0 && i < row.Length ? row[i] : null;
             }
 
-            // Foglio anagrafica: crea persone, non libri. Serve a non perdere chi al momento
-            // non ha niente in prestito, e a tenere cognome e nome separati nel giro completo.
+            // Member sheet: creates people, not books. It is there so nobody who currently
+            // has nothing on loan gets lost, and so first and last name survive the round trip.
             if (anagrafica)
             {
                 var cognome = Text(Cell(FLastName));
@@ -224,7 +225,7 @@ public static class Import
             var title = Text(Cell(FTitle));
             if (title is null) { skipped++; continue; }
 
-            // Le colonne non mappate si scartano: si importano solo i campi riconosciuti.
+            // Unmapped columns are dropped: only the recognised fields are imported.
             righe.Add(new ImportedRow
             {
                 Book = new Book
@@ -258,8 +259,8 @@ public static class Import
     static string? Map(string? header, IReadOnlyDictionary<string, string>? overrides)
     {
         if (header is null) return null;
-        // Un override vuoto significa "questa colonna non va importata": serve a poter
-        // togliere a mano un accoppiamento che il riconoscimento automatico rimetterebbe.
+        // An empty override means "do not import this column": it is what lets the user
+        // remove by hand a match that the automatic recognition would put back.
         if (overrides is not null)
             foreach (var (k, v) in overrides)
                 if (Normalize(k) == Normalize(header)) return v.Length == 0 ? null : v;
@@ -298,7 +299,7 @@ public static class Import
         var s = Text(v);
         if (s is null) return null;
 
-        // Prima l'italiano: in un foglio loro «03/04/2026» è il 3 aprile, non il 4 marzo.
+        // Italian first: in one of their sheets "03/04/2026" is 3 April, not 4 March.
         return DateTime.TryParse(s, Italian, DateTimeStyles.None, out var it) ? it
              : DateTime.TryParse(s, CultureInfo.InvariantCulture, DateTimeStyles.None, out var inv) ? inv
              : null;

@@ -25,7 +25,7 @@ public partial class LibroDialog : Window
 
     void TrySave()
     {
-        // La validazione riusa gli attributi su Book: la regola sta in un posto solo.
+        // Validation reuses the attributes on Book: the rule lives in one place only.
         var candidato = new Book
         {
             Id = _book.Id,

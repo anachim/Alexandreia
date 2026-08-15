@@ -3,8 +3,8 @@ using Alexandreia;
 namespace Alexandreia.Tests;
 
 /// <summary>
-/// L'unica logica non banale: un libro è una copia sola, quindi o è libero o è fuori.
-/// Il resto è CRUD e query di aggregazione che il database garantisce da sé.
+/// The only non-trivial logic: a book is a single copy, so it is either free or out.
+/// The rest is CRUD and aggregation queries the database guarantees by itself.
 /// </summary>
 public class PrestitiTests : IDisposable
 {
@@ -174,14 +174,14 @@ public class PrestitiTests : IDisposable
         Assert.Equal(2, _db.InWindow(DateTime.Today.AddMonths(-12)).Loans);
         Assert.Equal(2, _db.InWindow(DateTime.Today.AddMonths(-12)).People);
 
-        // Finestra chiusa: il prestito recente resta fuori.
+        // Closed window: the recent loan stays out of it.
         Assert.Equal(1, _db.InWindow(DateTime.Today.AddMonths(-12), DateTime.Today.AddMonths(-1)).Loans);
     }
 
     [Fact]
     public void Metriche_su_archivio_senza_prestiti()
     {
-        // Risultato vuoto: SQLite non dichiara il tipo delle colonne calcolate. Deve reggere.
+        // Empty result: SQLite declares no type for computed columns. It has to hold up.
         Assert.Empty(_db.TopBooks(DateTime.Today.AddMonths(-12)));
         Assert.Empty(_db.LoansByMonth(DateTime.Today.AddMonths(-12)));
 

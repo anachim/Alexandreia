@@ -8,9 +8,9 @@
 
         <TextBlock DockPanel.Dock="Top" Text="PORTA I DATI FUORI" Classes="h" Margin="0,0,0,10" />
 
-        <!-- Le due direzioni sono due riquadri uguali: si guardano di fianco, e uno più
-             squillante dell'altro farebbe pensare che conti di più. Il pieno resta al
-             solo bottone che cambia l'archivio. -->
+        <!-- The two directions are two identical boxes: they sit side by side, and one
+             louder than the other would suggest it matters more. The filled style is kept
+             for the only button that changes the archive. -->
         <Button Name="DoExport" DockPanel.Dock="Top" Classes="drop" Margin="0,0,0,10">
             <StackPanel Spacing="4">
                 <TextBlock Text="Salva l'archivio in un file Excel" FontWeight="SemiBold"
@@ -39,11 +39,11 @@
         <TextBlock Name="Errore" DockPanel.Dock="Top" Classes="overdue" TextWrapping="Wrap"
                    Margin="0,0,0,10" IsVisible="False" />
 
-        <!-- Dichiarato per primo, quindi in fondo: il bottone sta sotto e la casella che
-             cancella tutto gli sta sopra, dove la si legge prima di premere. -->
+        <!-- Declared first, therefore lowest: the button sits at the bottom and the box
+             that wipes everything sits above it, where it is read before pressing. -->
         <Border Name="Actions" DockPanel.Dock="Bottom" IsVisible="False" Margin="0,0,0,0">
-            <!-- DockPanel e non StackPanel: il riepilogo cambia, e uno StackPanel orizzontale
-                 lo lascerebbe disposto con l'ingombro del testo precedente. -->
+            <!-- DockPanel and not StackPanel: the summary changes, and a horizontal
+                 StackPanel would leave it arranged at the previous text's width. -->
             <DockPanel LastChildFill="True">
                 <Button Name="Apply" Classes="primary" Content="Importa"
                         DockPanel.Dock="Left" Margin="0,0,14,0" />
@@ -59,10 +59,10 @@
             </StackPanel>
         </Border>
 
-        <!-- Una linguetta per foglio: si guarda un foglio alla volta, con le sue colonne
-             sempre in chiaro invece che dietro un bottone da aprire. Lo scorrimento sta
-             dentro la linguetta, non qui attorno: se scorresse tutto, la striscia delle
-             linguette se ne andrebbe su e non sapresti più che foglio stai guardando. -->
+        <!-- One tab per sheet: one sheet at a time, with its columns always in the open
+             instead of behind a button. The scrolling lives inside the tab, not around it:
+             if everything scrolled, the tab strip would ride up and you would lose track of
+             which sheet you are looking at. -->
         <TabControl Name="Sheets" />
     </DockPanel>
 </UserControl>

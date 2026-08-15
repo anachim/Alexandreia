@@ -3,8 +3,8 @@ using Alexandreia;
 namespace Alexandreia.Tests;
 
 /// <summary>
-/// Lavora su matrici di celle, come le restituisce ExcelDataReader: così la logica
-/// che sbaglia davvero (intestazioni, mappatura, prestiti) è testabile senza un .xlsx.
+/// Works on cell matrices, the way ExcelDataReader hands them over: so the logic that
+/// really gets things wrong (headers, mapping, loans) is testable without an .xlsx.
 /// </summary>
 public class ImportTests
 {
@@ -54,7 +54,7 @@ public class ImportTests
         Assert.Equal("Euclide", libro.Author);
         Assert.Equal("rilegato", libro.Notes);
 
-        // ISBN, anno e collocazione non sono campi nostri e vengono scartati, non accodati.
+        // ISBN, year and shelf are not our fields: they are dropped, not appended.
         Assert.DoesNotContain("978", libro.Notes);
         Assert.DoesNotContain("A1", libro.Notes);
     }
@@ -70,7 +70,7 @@ public class ImportTests
     [Fact]
     public void Righe_uguali_restano_schede_separate()
     {
-        // Nessuna deduplica: tre copie sono tre righe, e a farle è chi possiede i dati.
+        // No deduplication: three copies are three rows, made by whoever owns the data.
         var r = Import.Plan([
             R("Titolo", "Autore"),
             R("Elementi", "Euclide"),
@@ -132,7 +132,7 @@ public class ImportTests
     [Fact]
     public void Legge_tutti_i_fogli_del_file()
     {
-        // Il ciclo su NextResult() è facile da sbagliare fermandosi al primo foglio.
+        // The NextResult() loop is easy to get wrong by stopping at the first sheet.
         var fogli = Import.ReadWorkbook(Fixture("multifoglio.xlsx"));
 
         Assert.Equal(["Appunti", "Catalogo"], fogli.Select(f => f.Name));
@@ -161,7 +161,7 @@ public class ImportTests
             Assert.Equal(["Almagesto", "Elementi"], db.Books().Select(b => b.Title));
             Assert.Equal("Ipazia", db.Books().Single(b => b.Title == "Elementi").LentTo);
 
-            // L'utente è stato creato al volo, col nome intero nel cognome.
+            // The member was created on the fly, with the whole name in the surname.
             var utente = Assert.Single(db.Members());
             Assert.Equal("Ipazia", utente.LastName);
             Assert.Equal(1, utente.OpenLoans);
@@ -231,7 +231,7 @@ public class ImportTests
             {
                 Assert.Equal(2, Export.Write(db, file).Books);
 
-                // Il giro completo: quello che esce si rilegge senza mappature a mano.
+                // The full round trip: what comes out is read back with no manual mapping.
                 var fogli = Import.ReadWorkbook(file);
                 var r = Import.Plan(fogli[0].Rows);
 
@@ -265,7 +265,7 @@ public class ImportTests
                     R("Almagesto", "Tolomeo", null),
                 ]).Rows);
 
-                // Elementi rientra (diventa storico), Almagesto esce (resta aperto).
+                // Elementi comes back (becomes history), Almagesto goes out (stays open).
                 db.Return(db.Loans().Single().Id);
                 db.Lend(db.Books().Single(b => b.Title == "Almagesto").Id,
                         db.Members().Single().Id, DateTime.Today.AddDays(10));
@@ -331,10 +331,10 @@ public class ImportTests
 
                 altro.ApplyAll(archivio.Rows, [], anagrafica.Members, replace: true);
 
-                // «Verdi Luca» non aveva prestiti: senza il foglio Utenti sarebbe sparito.
+                // "Verdi Luca" had no loans: without the members sheet they would be gone.
                 Assert.Equal(["Rossi", "Verdi"], altro.Members().Select(m => m.LastName));
 
-                // E i nomi restano divisi, invece di finire tutti nel cognome.
+                // And the names stay apart, instead of all ending up in the surname.
                 var mario = altro.Members().Single(m => m.LastName == "Rossi");
                 Assert.Equal("Mario", mario.FirstName);
                 Assert.Equal("3B", mario.Notes);
@@ -369,7 +369,7 @@ public class ImportTests
             {
                 var fogli = Import.ReadWorkbook(file);
 
-                // Nomi inventati e ordine sparso: quello che conta sono le colonne.
+                // Made-up names and shuffled order: what counts are the columns.
                 var storico = Import.Plan(fogli[1].Rows, "Foglio2");
                 var anagrafica = Import.Plan(fogli[2].Rows, "Elenco soci");
                 var archivio = Import.Plan(fogli[0].Rows, "Dati");
@@ -401,10 +401,10 @@ public class ImportTests
             R("Elementi", "Euclide", "Rossi Mario", "10/01/2026"),
         };
 
-        // «Quando e' tornato» non è in nessuna lista: il foglio sembra un elenco di libri.
+        // "Quando e' tornato" is in no list: the sheet looks like a plain book list.
         Assert.False(Import.Plan(rows).LooksLikeHistory);
 
-        // Basta indicarlo a mano dalla tendina e il foglio diventa storico.
+        // Pointing it out by hand from the dropdown turns the sheet into history.
         var corretto = Import.Plan(rows, overrides: new Dictionary<string, string>
         {
             ["Quando e' tornato"] = Import.FReturnedAt,
@@ -484,7 +484,7 @@ public class ImportTests
         });
     }
 
-    // --- Appoggio -------------------------------------------------------
+    // --- Helpers --------------------------------------------------------
 
     static string Fixture(string name) => Path.Combine(AppContext.BaseDirectory, "fixtures", name);
 

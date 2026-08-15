@@ -5,9 +5,9 @@
 
   <ScrollViewer VerticalScrollBarVisibility="Auto">
     <Border Classes="card" Margin="0,0,0,10" Padding="12,10">
-        <!-- La tabella prende l'altezza che le serve, fino a un tetto oltre il quale scorre
-             da sola. Non riempie lo spazio disponibile: con la finestra bassa si schiacciava
-             fino a mostrare la sola riga di intestazione. -->
+        <!-- The table takes the height it needs, up to a cap past which it scrolls on its
+             own. It does not fill the available space: with a short window it used to be
+             squashed down to the header row alone. -->
         <StackPanel>
 
             <DockPanel Name="Head" LastChildFill="True" Margin="0,0,0,8">
@@ -29,8 +29,8 @@
                     <DataGridTemplateColumn Header="Va nel campo" Width="200">
                         <DataGridTemplateColumn.CellTemplate>
                             <DataTemplate x:DataType="m:ColumnChoice">
-                                <!-- Stretch e niente larghezza minima: la tendina segue la colonna
-                                     invece di sbordare quando la si stringe. -->
+                                <!-- Stretch and no minimum width: the dropdown follows the
+                                     column instead of overflowing when it is narrowed. -->
                                 <ComboBox ItemsSource="{Binding Options}" SelectedItem="{Binding Field, Mode=TwoWay}"
                                           SelectionChanged="OnFieldChanged" Margin="4,2"
                                           HorizontalAlignment="Stretch" />
