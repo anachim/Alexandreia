@@ -209,12 +209,35 @@ public class UiTests : IDisposable
         // Se questo torna falso: i DataGridTextColumn legano in TwoWay e riscrivono
         // ReturnedAt a default(DateTime), che spegne IsOpen. Servono Mode=OneWay.
         Assert.True(loan.Overdue, $"DueAt={loan.DueAt:d} ReturnedAt={loan.ReturnedAt:o}");
-        Assert.Equal("RITARDO 3 GG", loan.LateLabel);
+        Assert.Equal("In ritardo di 3 giorni", loan.Stato);
 
-        // Il timbro è visibile solo sulla riga in ritardo.
-        var timbro = Named<DataGrid>(view, "Grid").GetVisualDescendants().OfType<Border>()
-            .Single(b => b.Classes.Contains("stamp"));
-        Assert.True(timbro.IsVisible);
+        // Lo stato è scritto a parole nella sua colonna, non affidato a un simbolo.
+        var stato = Named<DataGrid>(view, "Grid").GetVisualDescendants().OfType<Border>()
+            .Single(b => b.Classes.Contains("pill"));
+        Assert.True(stato.Classes.Contains("late"));
+        Assert.Equal("In ritardo di 3 giorni",
+            stato.GetVisualDescendants().OfType<TextBlock>().Single().Text);
+    }
+
+    [AvaloniaFact]
+    public void Lo_stato_distingue_in_regola_ritardo_e_rientrato()
+    {
+        var b = _db.SaveBook(new Book { Title = "Almagesto" });
+        var c = _db.SaveBook(new Book { Title = "Coniche" });
+        _db.Lend(_libro, _ipazia, DateTime.Today.AddDays(-3));   // in ritardo
+        _db.Lend(b, _ipazia, DateTime.Today.AddDays(10));        // in regola
+        _db.Lend(c, _ipazia, DateTime.Today.AddDays(10));
+        _db.Return(_db.Loans().Single(l => l.BookId == c).Id);   // rientrato
+
+        var w = Open();
+        Tab(w, TabPrestiti);
+        var view = w.GetVisualDescendants().OfType<PrestitiView>().First();
+        view.Mostra(Filtri.Tutti);
+        Settle();
+
+        Assert.Equal(
+            ["In ritardo di 3 giorni", "In regola", $"Rientrato il {DateTime.Today:dd/MM/yyyy}"],
+            Named<DataGrid>(view, "Grid").ItemsSource!.Cast<Loan>().Select(l => l.Stato));
     }
 
     [AvaloniaFact]
@@ -342,10 +365,9 @@ public class UiTests : IDisposable
     {
         var w = Open();
         Tab(w, TabDati);
-        Carica(w, "catalogo.xlsx");
 
-        var foglio = Assert.Single(w.GetVisualDescendants().OfType<SheetMapping>());
-        var scelte = Named<DataGrid>(foglio, "Grid").ItemsSource!.Cast<ColumnChoice>().ToList();
+        var foglio = Assert.Single(Carica(w, "catalogo.xlsx").Fogli);
+        var scelte = foglio.Choices;
 
         Assert.Equal(Import.FTitle, scelte.Single(c => c.Header == "Titolo").Field);
         Assert.Equal(Import.FPerson, scelte.Single(c => c.Header == "Prestato a").Field);
@@ -361,14 +383,12 @@ public class UiTests : IDisposable
     {
         var w = Open();
         Tab(w, TabDati);
-        Carica(w, "catalogo.xlsx");
 
-        var foglio = Assert.Single(w.GetVisualDescendants().OfType<SheetMapping>());
+        var foglio = Assert.Single(Carica(w, "catalogo.xlsx").Fogli);
         Assert.False(Named<TextBlock>(w, "Found").IsVisible);
 
         // La tendina c'è sempre, anche con un foglio solo: è lì che si corregge se
         // abbiamo capito male, e indovinare in silenzio crea schede doppie.
-        Assert.Equal(SheetKinds.Books, Named<ComboBox>(foglio, "Tipo").SelectedItem);
         Assert.Equal(SheetKinds.Books, foglio.Kind);
         Assert.True(foglio.Included);
     }
@@ -378,10 +398,9 @@ public class UiTests : IDisposable
     {
         var w = Open();
         Tab(w, TabDati);
-        Carica(w, "catalogo.xlsx");
 
-        var foglio = Assert.Single(w.GetVisualDescendants().OfType<SheetMapping>());
-        Named<ComboBox>(foglio, "Tipo").SelectedItem = SheetKinds.Skip;
+        var foglio = Assert.Single(Carica(w, "catalogo.xlsx").Fogli);
+        foglio.Scegli(SheetKinds.Skip);
         Settle();
 
         Assert.False(foglio.Included);
@@ -394,9 +413,10 @@ public class UiTests : IDisposable
     {
         var w = Open();
         Tab(w, TabDati);
-        Carica(w, "multifoglio.xlsx");
 
-        var fogli = w.GetVisualDescendants().OfType<SheetMapping>().ToList();
+        // Dalla lista e non dall'albero visuale: con una linguetta per foglio, solo
+        // quella selezionata è renderizzata.
+        var fogli = Carica(w, "multifoglio.xlsx").Fogli;
         Assert.Equal(["Appunti", "Catalogo"], fogli.Select(f => f.Sheet.Name));
         Assert.True(Named<TextBlock>(w, "Found").IsVisible);
 
@@ -404,15 +424,13 @@ public class UiTests : IDisposable
         Assert.True(fogli[0].Report.Empty);
         Assert.False(fogli[0].Included);
         Assert.Equal(SheetKinds.Skip, fogli[0].Kind);
-        Assert.True(Named<TextBlock>(fogli[0], "Problema").IsVisible);
-        Assert.Contains("non riesco a ricavare niente", Named<TextBlock>(fogli[0], "Problema").Text!);
+        Assert.Contains("non riesco a ricavare niente", fogli[0].Messaggio!);
 
         // Nel secondo foglio il titolo si chiama «Libro» e l'autore ha un'intestazione
         // che nessuna lista indovinerà mai: è il motivo della mappatura per foglio.
         Assert.True(fogli[1].Included);
-        var scelte = Named<DataGrid>(fogli[1], "Grid").ItemsSource!.Cast<ColumnChoice>().ToList();
-        Assert.Equal(Import.FTitle, scelte.Single(c => c.Header == "Libro").Field);
-        Assert.Equal(ColumnChoice.None, scelte.Single(c => c.Header == "Chi lo ha scritto").Field);
+        Assert.Equal(Import.FTitle, fogli[1].Choices.Single(c => c.Header == "Libro").Field);
+        Assert.Equal(ColumnChoice.None, fogli[1].Choices.Single(c => c.Header == "Chi lo ha scritto").Field);
     }
 
     [AvaloniaFact]

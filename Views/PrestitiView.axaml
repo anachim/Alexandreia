@@ -30,27 +30,25 @@
         <DataGrid Name="Grid" AutoGenerateColumns="False" IsReadOnly="True" x:DataType="m:Loan"
                   GridLinesVisibility="Horizontal" CanUserSortColumns="True" CanUserResizeColumns="True">
             <DataGrid.Columns>
-                <DataGridTextColumn Header="Titolo" Binding="{Binding Title, Mode=OneWay}" Width="250" />
-                <DataGridTextColumn Header="Autore" Binding="{Binding Author, Mode=OneWay}" Width="160" />
-                <DataGridTextColumn Header="A chi" Binding="{Binding MemberName, Mode=OneWay}" Width="170" />
+                <DataGridTextColumn Header="Titolo" Binding="{Binding Title, Mode=OneWay}" Width="230" />
+                <DataGridTextColumn Header="Autore" Binding="{Binding Author, Mode=OneWay}" Width="150" />
+                <DataGridTextColumn Header="A chi" Binding="{Binding MemberName, Mode=OneWay}" Width="160" />
                 <DataGridTextColumn Header="Prestato il" Width="110"
                                     Binding="{Binding LoanedAt, Mode=OneWay, StringFormat='{}{0:dd/MM/yyyy}'}" />
-                <!-- Data e ritardo nella stessa colonna: sono la stessa informazione, e tenerli
-                     divisi lasciava una colonna vuota su ogni riga in regola. -->
-                <DataGridTemplateColumn Header="Rientro entro" Width="160">
+                <DataGridTextColumn Header="Rientro entro" Width="130"
+                                    Binding="{Binding DueLabel, Mode=OneWay}" />
+                <!-- La data del rientro sta dentro lo stato: una colonna in meno che diceva
+                     la stessa cosa in due posti. -->
+                <DataGridTemplateColumn Header="Stato" Width="200">
                     <DataGridTemplateColumn.CellTemplate>
                         <DataTemplate x:DataType="m:Loan">
-                            <StackPanel Spacing="3" Margin="4,4" VerticalAlignment="Center">
-                                <TextBlock Text="{Binding DueLabel}" />
-                                <Border Classes="stamp" IsVisible="{Binding Overdue}">
-                                    <TextBlock Text="{Binding LateLabel}" />
-                                </Border>
-                            </StackPanel>
+                            <Border Classes="pill" Classes.late="{Binding Overdue}"
+                                    Classes.done="{Binding !IsOpen}" Margin="4,3" VerticalAlignment="Center">
+                                <TextBlock Text="{Binding Stato}" />
+                            </Border>
                         </DataTemplate>
                     </DataGridTemplateColumn.CellTemplate>
                 </DataGridTemplateColumn>
-                <DataGridTextColumn Header="Rientrato" Width="105"
-                                    Binding="{Binding ReturnedAt, Mode=OneWay, StringFormat='{}{0:dd/MM/yyyy}'}" />
                 <DataGridTemplateColumn Header="Azioni" Width="200">
                     <DataGridTemplateColumn.CellTemplate>
                         <DataTemplate x:DataType="m:Loan">

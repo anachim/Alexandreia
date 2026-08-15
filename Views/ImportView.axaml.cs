@@ -91,10 +91,13 @@ public partial class ImportView : UserControl, IReloadable
             Load(path);
     }
 
+    /// <summary>I fogli del file, nell'ordine in cui stanno dentro.</summary>
+    public IReadOnlyList<SheetMapping> Fogli => _sheets;
+
     public void Load(string path)
     {
         Errore.IsVisible = false;
-        Sheets.Children.Clear();
+        Sheets.Items.Clear();
         _sheets.Clear();
 
         List<Import.SheetData> fogli;
@@ -118,16 +121,14 @@ public partial class ImportView : UserControl, IReloadable
         {
             var vista = new SheetMapping(foglio);
             vista.Changed += UpdateTotal;
-            // Con un foglio solo si vede subito tutto; con tanti si parte chiusi, altrimenti
-            // la schermata diventa un rotolo prima ancora di aver capito cosa c'è dentro.
-            vista.Apri(fogli.Count == 1);
             _sheets.Add(vista);
-            Sheets.Children.Add(vista);
+            Sheets.Items.Add(new TabItem { Header = foglio.Name, Content = vista });
         }
+        Sheets.SelectedIndex = 0;
 
         // Con un foglio solo non c'è niente da annunciare: la schermata resta semplice.
         Found.IsVisible = fogli.Count > 1;
-        Found.Text = $"{fogli.Count} fogli nel file. Apri «Colonne» per vedere come li stiamo leggendo.";
+        Found.Text = $"{fogli.Count} fogli nel file: controllali uno per uno qui sotto.";
         Actions.IsVisible = ReplaceBox.IsVisible = true;
         UpdateTotal();
     }

@@ -78,8 +78,10 @@ public class Loan
 
     public string DueLabel => DueAt.ToString("dd/MM/yyyy");
 
-    /// <summary>Testo del timbro sulla riga in ritardo. Corto: sta dentro la colonna della data.</summary>
-    public string LateLabel => LateDays == 1 ? "RITARDO 1 GG" : $"RITARDO {LateDays} GG";
+    /// <summary>Come sta questo prestito, detto a parole. Porta anche la data del rientro.</summary>
+    public string Stato => !IsOpen ? $"Rientrato il {ReturnedAt:dd/MM/yyyy}"
+        : Overdue ? $"In ritardo di {LateDays} {(LateDays == 1 ? "giorno" : "giorni")}"
+        : "In regola";
 }
 
 // Proprietà settabili, non record posizionali: SQLite non dichiara il tipo delle colonne calcolate

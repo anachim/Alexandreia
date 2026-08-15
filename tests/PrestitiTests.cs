@@ -141,7 +141,7 @@ public class PrestitiTests : IDisposable
         var prestito = _db.Loans().Single();
         Assert.True(prestito.Overdue);
         Assert.Equal(3, prestito.LateDays);
-        Assert.Equal("RITARDO 3 GG", prestito.LateLabel);
+        Assert.Equal("In ritardo di 3 giorni", prestito.Stato);
         Assert.Equal("Ipazia", prestito.MemberName);
     }
 

@@ -25,8 +25,9 @@ bottone «Presta» è spento.
 **Utenti** — cognome, nome, nota. Nella tendina del prestito la nota compare accanto al nome: con
 due omonimi è l'unica cosa che li distingue.
 
-**Prestiti** — filtrabile fra *Fuori adesso*, *Solo in ritardo*, *Già rientrati*, *Tutti*. I ritardi
-portano il timbro con i giorni.
+**Prestiti** — filtrabile fra *Fuori adesso*, *Solo in ritardo*, *Già rientrati*, *Tutti*. Ogni riga
+dice il suo stato: *In regola*, *In ritardo di N giorni*, *Rientrato il …*. Da qui si registra il
+rientro o si prolunga la scadenza.
 
 **Metriche** — lo stato di adesso, e i numeri di un periodo scelto fra sette intervalli pronti o due
 date qualsiasi. I prestiti del periodo si confrontano con la finestra precedente di pari durata.
@@ -90,7 +91,7 @@ mappata sul campo sbagliato su 1400 righe non te ne accorgi finché non è tardi
 battitura tipo «Titollo» non lo indovinerà mai nessuna lista, e infatti si corregge dalla tendina.
 Le colonne non riconosciute vengono **scartate**: si importano solo i campi qui sopra.
 
-Se il file ha **più fogli** li mostra tutti, ognuno con la **sua** mappatura — lo stesso campo si
+Se il file ha **più fogli** ognuno ha la sua linguetta e la **sua** mappatura — lo stesso campo si
 chiama «Titolo» in un foglio e «Libro» in un altro.
 
 **Che cosa c'è in un foglio lo dici tu**, da una tendina con quattro voci: *Libri*, *Storico dei

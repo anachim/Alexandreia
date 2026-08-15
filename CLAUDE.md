@@ -141,14 +141,24 @@ scelta presa per non finire nel crema + terracotta che è la risposta prevedibil
 Il colore è informazione, non decorazione: viola = azione principale (`Button.primary`),
 vermiglio = ritardo o cancellazione (`Button.danger`, `Border.warning`, `Border.stamp`).
 
-`Border.stamp` è l'**elemento firma**: il badge ruotato del ritardo, nell'elenco prestiti. Sta in
-un posto solo apposta. Se serve enfasi altrove, non è quello il modo.
+Lo stato di un prestito si dice **a parole** (`Loan.Stato` + `Border.pill`), non con un simbolo.
+C'era un timbro grafico al suo posto: era una bella idea che nessuno capiva, ed è il motivo per
+cui non c'è più. Se una cosa va spiegata, in un applicativo da banco non funziona.
 
 Una sola famiglia di caratteri (Inter, già dentro Avalonia): la personalità viene da scala, peso e
 `LetterSpacing`. Aggiungere un file di font per decorare le linguette sarebbe peso senza funzione.
 
 I bottoni dentro le celle di una `DataGrid` hanno un riempimento più stretto
 (`DataGridCell Button`): con quello dei bottoni normali escono dalla colonna.
+
+Le colonne hanno **larghezze fisse** e `CanUserResizeColumns`: con una colonna elastica la
+tabella si accartoccia invece di far scorrere. Vanno però tenute sotto la larghezza della
+finestra, altrimenti la colonna «Azioni» finisce fuori schermo e il bottone principale sparisce
+finché non scorri — è già successo due volte, e non lo prende nessun test.
+
+I fogli dell'import stanno in un `TabControl`, uno per linguetta. Quindi **solo il foglio
+selezionato è nell'albero visuale**: nei test si passa da `ImportView.Fogli` e dalle proprietà di
+`SheetMapping` (`Choices`, `Kind`, `Messaggio`), non da `GetVisualDescendants`.
 
 ## Trappole di Avalonia
 

@@ -123,21 +123,30 @@
             <Setter Property="Cursor" Value="Hand" />
         </Style>
 
-        <!-- L'elemento firma: il timbro della scadenza, premuto storto sulla scheda. -->
-        <Style Selector="Border.stamp">
-            <Setter Property="BorderBrush" Value="{DynamicResource Late}" />
-            <Setter Property="BorderThickness" Value="1.5" />
-            <Setter Property="Background" Value="{DynamicResource LateSoft}" />
-            <Setter Property="CornerRadius" Value="2" />
-            <Setter Property="Padding" Value="7,2" />
+        <!-- Lo stato di un prestito, detto a parole e non con un simbolo da interpretare. -->
+        <Style Selector="Border.pill">
+            <Setter Property="Background" Value="#E6F0EC" />
+            <Setter Property="CornerRadius" Value="10" />
+            <Setter Property="Padding" Value="9,2" />
             <Setter Property="HorizontalAlignment" Value="Left" />
-            <Setter Property="RenderTransform" Value="rotate(-2deg)" />
         </Style>
-        <Style Selector="Border.stamp > TextBlock">
+        <Style Selector="Border.pill > TextBlock">
+            <Setter Property="Foreground" Value="{DynamicResource Free}" />
+            <Setter Property="FontSize" Value="12" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+        </Style>
+        <Style Selector="Border.pill.late">
+            <Setter Property="Background" Value="{DynamicResource LateSoft}" />
+        </Style>
+        <Style Selector="Border.pill.late > TextBlock">
             <Setter Property="Foreground" Value="{DynamicResource Late}" />
-            <Setter Property="FontSize" Value="11" />
-            <Setter Property="FontWeight" Value="Bold" />
-            <Setter Property="LetterSpacing" Value="1.2" />
+        </Style>
+        <Style Selector="Border.pill.done">
+            <Setter Property="Background" Value="#ECEDEA" />
+        </Style>
+        <Style Selector="Border.pill.done > TextBlock">
+            <Setter Property="Foreground" Value="{DynamicResource Muted}" />
+            <Setter Property="FontWeight" Value="Normal" />
         </Style>
 
         <Style Selector="Border.drop">

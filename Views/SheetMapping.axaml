@@ -10,7 +10,6 @@
                  lo lascerebbe disposto con l'ingombro del testo precedente. -->
             <DockPanel Name="Head" LastChildFill="True">
                 <ComboBox Name="Tipo" DockPanel.Dock="Left" MinWidth="190" Margin="0,0,12,0" />
-                <Button Name="Dettagli" DockPanel.Dock="Right" Content="Colonne" />
                 <TextBlock Name="Nome" DockPanel.Dock="Left" FontWeight="SemiBold"
                            VerticalAlignment="Center" Margin="0,0,12,0" />
                 <TextBlock Name="Riassunto" Classes="muted" VerticalAlignment="Center" />

@@ -55,8 +55,8 @@
             </StackPanel>
         </Border>
 
-        <ScrollViewer>
-            <StackPanel Name="Sheets" />
-        </ScrollViewer>
+        <!-- Una linguetta per foglio: si guarda un foglio alla volta, con le sue colonne
+             sempre in chiaro invece che dietro un bottone da aprire. -->
+        <TabControl Name="Sheets" />
     </DockPanel>
 </UserControl>

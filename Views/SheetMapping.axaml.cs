@@ -43,7 +43,6 @@ public partial class SheetMapping : UserControl
 
     List<ColumnChoice> _choices = [];
     bool _loading;
-    bool _aperto;
 
     public SheetMapping() => InitializeComponent();
 
@@ -61,23 +60,18 @@ public partial class SheetMapping : UserControl
             Recompute(first: false);
             Changed?.Invoke();
         };
-
-        Dettagli.Click += (_, _) => Apri(!_aperto);
-    }
-
-    /// <summary>
-    /// Le colonne restano chiuse quando i fogli sono tanti: un file con dieci pagine
-    /// diventava una pagina di scorrimento infinito prima ancora di capire cosa c'era dentro.
-    /// </summary>
-    public void Apri(bool aperto)
-    {
-        _aperto = aperto && Report.Columns.Count > 0 && Kind != SheetKinds.Skip;
-        Grid.IsVisible = _aperto;
-        Dettagli.Content = _aperto ? "Nascondi colonne" : "Colonne";
-        Dettagli.IsVisible = Report.Columns.Count > 0 && Kind != SheetKinds.Skip;
     }
 
     public string Kind => (string?)Tipo.SelectedItem ?? SheetKinds.Skip;
+
+    /// <summary>Cambia il tipo del foglio, come farebbe la tendina.</summary>
+    public void Scegli(string kind) => Tipo.SelectedItem = kind;
+
+    /// <summary>La mappatura riga per riga, senza passare dalla tabella disegnata.</summary>
+    public IReadOnlyList<ColumnChoice> Choices => _choices;
+
+    /// <summary>Il messaggio mostrato, se ce n'è uno.</summary>
+    public string? Messaggio => Problema.IsVisible ? Problema.Text : null;
 
     public bool Included => Kind != SheetKinds.Skip && !Report.Empty;
 
@@ -146,7 +140,7 @@ public partial class SheetMapping : UserControl
         // metterlo su «Non caricare», il messaggio è rumore.
         Problema.Text = string.Join("\n", messaggi);
         Problema.IsVisible = messaggi.Count > 0 && (Report.Empty || Kind != SheetKinds.Skip);
-        Apri(_aperto);
+        Grid.IsVisible = Report.Columns.Count > 0 && Kind != SheetKinds.Skip;
     }
 
     static string Plurale(int n, string uno, string molti) => $"{n} {(n == 1 ? uno : molti)}";
