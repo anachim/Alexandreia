@@ -75,10 +75,10 @@ Vanno rispettate: sembrano scorciatoie, sono richieste esplicite.
 - **L'import scarta** le colonne non riconosciute: non accodarle alla nota.
 - **Il backup è un file Excel leggibile, senza Id.** So che non è quello che si farebbe
   normalmente; è stato chiesto e riconfermato.
-- **L'export porta la fotografia di adesso, non lo storico.** I prestiti già rientrati e le
-  persone senza niente fuori restano indietro, e va bene così: le statistiche del passato le
-  tiene la biblioteca per conto suo, le metriche partono da quando l'applicazione entra in
-  servizio. Deciso esplicitamente — non è un buco da tappare.
+- **L'archivio vive su un PC alla volta**: si esporta e si ricarica con «Sostituisci tutto».
+  Non è pensato per unire due archivi, e infatti non c'è nessuna chiave univoca sui prestiti.
+  Se un giorno servisse la fusione, prima vanno decisi i conflitti (libro rientrato su un PC e
+  ancora fuori sull'altro) e va sciolta l'incoerenza coi libri, che non deduplichiamo.
 - Gira su **Windows 11**. La release compila solo `win-x64`; il codice resta portabile.
 
 ## Import Excel
@@ -99,9 +99,17 @@ perché lo stesso campo cambia nome da un foglio all'altro. Un foglio da cui non
 I nomi dei campi (`Import.FTitle` e compagnia) sono **le etichette italiane** che l'utente vede
 nella tendina, non identificatori interni: cambiarli cambia la UI e va fatto lì.
 
-`Export.Write` scrive **lo stesso formato** che `Plan` sa leggere: il giro completo
-export → import è coperto da `L_export_rilegge_quello_che_ha_scritto`. Se aggiungi un campo,
-va in `Synonyms`, in `Export.Headers` e in `Db.ExportRow`, altrimenti il giro si rompe a metà.
+`Export.Write` scrive **lo stesso formato** che `Plan` sa leggere, su due fogli: `Archivio`
+(libri e prestiti aperti) e `Storico` (tutti i prestiti, uno per riga). Se aggiungi un campo va in
+`Synonyms`, in `Export.Headers` e in `Db.ExportRow`, altrimenti il giro si rompe a metà.
+
+Un foglio è lo storico se ha una colonna mappata su `Import.FReturnedAt` — regola strutturale, non
+basata sul nome del foglio. Le sue righe **non creano libri**: `Db.ApplyAll` le aggancia per
+titolo + autore ai libri del primo foglio, e conta a parte quelle che non trovano un libro. Le
+righe di storico ancora aperte vengono ignorate: quel prestito è già arrivato dal foglio Archivio,
+e senza quel salto arriverebbe due volte.
+
+Il giro export → import è coperto da `Il_giro_completo_porta_anche_i_prestiti_gia_rientrati`.
 
 ClosedXML scrive, ExcelDataReader legge. Due librerie Excel di proposito: ClosedXML garantisce
 file che Excel apre davvero, ExcelDataReader è l'unico dei due che regge i vecchi `.xls`.

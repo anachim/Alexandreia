@@ -229,11 +229,11 @@ public class ImportTests
             var file = Path.Combine(Path.GetTempPath(), $"alexandreia-export-{Guid.NewGuid():N}.xlsx");
             try
             {
-                Assert.Equal(2, Export.Write(db, file));
+                Assert.Equal(2, Export.Write(db, file).Books);
 
                 // Il giro completo: quello che esce si rilegge senza mappature a mano.
                 var fogli = Import.ReadWorkbook(file);
-                var r = Import.Plan(Assert.Single(fogli).Rows);
+                var r = Import.Plan(fogli[0].Rows);
 
                 Assert.Equal(2, r.Rows.Count);
                 Assert.Equal(1, r.Loans);
@@ -248,6 +248,99 @@ public class ImportTests
             {
                 File.Delete(file);
             }
+        });
+    }
+
+    [Fact]
+    public void Il_giro_completo_porta_anche_i_prestiti_gia_rientrati()
+    {
+        var file = Path.Combine(Path.GetTempPath(), $"alexandreia-giro-{Guid.NewGuid():N}.xlsx");
+        try
+        {
+            Con(db =>
+            {
+                db.Apply(Import.Plan([
+                    R("Titolo", "Autore", "Prestato a"),
+                    R("Elementi", "Euclide", "Ipazia"),
+                    R("Almagesto", "Tolomeo", null),
+                ]).Rows);
+
+                // Elementi rientra (diventa storico), Almagesto esce (resta aperto).
+                db.Return(db.Loans().Single().Id);
+                db.Lend(db.Books().Single(b => b.Title == "Almagesto").Id,
+                        db.Members().Single().Id, DateTime.Today.AddDays(10));
+
+                var n = Export.Write(db, file);
+                Assert.Equal(2, n.Books);
+                Assert.Equal(2, n.Loans); // uno chiuso e uno aperto
+            });
+
+            Con(altro =>
+            {
+                var fogli = Import.ReadWorkbook(file);
+                Assert.Equal([Export.SheetArchive, Export.SheetHistory], fogli.Select(f => f.Name));
+
+                var archivio = Import.Plan(fogli[0].Rows, fogli[0].Name);
+                var storico = Import.Plan(fogli[1].Rows, fogli[1].Name);
+                Assert.False(archivio.IsHistory);
+                Assert.True(storico.IsHistory);
+
+                var c = altro.ApplyAll(archivio.Rows, storico.Rows, replace: true);
+                Assert.Equal(2, c.Books);
+                Assert.Equal(1, c.OpenLoans);
+                Assert.Equal(1, c.History);      // il prestito già rientrato
+                Assert.Equal(0, c.HistorySkipped);
+
+                var s = altro.Stats();
+                Assert.Equal(2, s.TotalLoans);
+                Assert.Equal(1, s.OpenLoans);
+                Assert.Equal(0, s.NeverLent);
+                Assert.Equal("Ipazia", altro.Books().Single(b => b.Title == "Almagesto").LentTo);
+            });
+        }
+        finally
+        {
+            File.Delete(file);
+        }
+    }
+
+    [Fact]
+    public void Lo_storico_di_un_libro_che_non_c_e_viene_saltato_e_contato()
+    {
+        Con(db =>
+        {
+            var storico = Import.Plan([
+                R("Titolo", "Autore", "Prestato a", "Prestato il", "Rientrato il"),
+                R("Fantasma", "Nessuno", "Ipazia", "01/01/2026", "10/01/2026"),
+            ]);
+
+            var c = db.ApplyAll([], storico.Rows);
+
+            Assert.Equal(0, c.History);
+            Assert.Equal(1, c.HistorySkipped);
+            Assert.Equal(0, db.Stats().TotalLoans);
+        });
+    }
+
+    [Fact]
+    public void Lo_storico_non_crea_libri_doppi()
+    {
+        Con(db =>
+        {
+            var archivio = Import.Plan([R("Titolo", "Autore"), R("Elementi", "Euclide")]);
+            var storico = Import.Plan([
+                R("Titolo", "Autore", "Prestato a", "Prestato il", "Rientrato il"),
+                R("Elementi", "Euclide", "Ipazia", "01/01/2026", "10/01/2026"),
+                R("Elementi", "Euclide", "Eratostene", "01/02/2026", "10/02/2026"),
+            ]);
+
+            var c = db.ApplyAll(archivio.Rows, storico.Rows);
+
+            Assert.Equal(1, c.Books);       // un libro solo, non tre
+            Assert.Equal(2, c.History);
+            Assert.Single(db.Books());
+            Assert.Equal(2, db.Members().Count);
+            Assert.Equal(2, db.TopBooks(DateTime.Today.AddYears(-1))[0].Loans);
         });
     }
 

@@ -45,6 +45,9 @@ public partial class SheetMapping : UserControl
 
     public bool Included => Includi.IsChecked == true && !Report.Empty;
 
+    /// <summary>Solo i prestiti chiusi: quelli aperti arrivano dal foglio dei libri.</summary>
+    public int ChiusiNelloStorico => Report.Rows.Count(r => r.ReturnedAt is not null && r.HasLoan);
+
     void OnFieldChanged(object? sender, SelectionChangedEventArgs e)
     {
         if (_loading) return;
@@ -78,10 +81,11 @@ public partial class SheetMapping : UserControl
         else if (first || eraVuoto) Includi.IsChecked = true;
         _loading = false;
 
-        Riassunto.Text = Report.Empty
-            ? "niente da caricare"
-            : $"{Report.DataRows} righe → {Report.Books.Count} libri"
-              + (Report.SkippedNoTitle > 0 ? $", {Report.SkippedNoTitle} senza titolo" : "");
+        Riassunto.Text = Report.Empty ? "niente da caricare"
+            : Report.IsHistory
+                ? $"storico: {Report.DataRows} righe → {ChiusiNelloStorico} prestiti già rientrati"
+                : $"{Report.DataRows} righe → {Report.Books.Count} libri"
+                  + (Report.SkippedNoTitle > 0 ? $", {Report.SkippedNoTitle} senza titolo" : "");
 
         var messaggi = new List<string>(Report.Warnings);
         if (Report.Empty)

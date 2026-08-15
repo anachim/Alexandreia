@@ -44,13 +44,22 @@ Tutto dalla scheda **Dati**, in un unico formato Excel:
 | Prestato il | opzionale |
 | Rientro entro | opzionale, altrimenti 30 giorni |
 
-**Esporta** salva l'archivio in questo formato: serve sia da copia di sicurezza sia per spostare i
-dati su un altro computer.
+**Esporta** salva l'archivio in un file con **due fogli**:
 
-Porta con sé la fotografia di adesso — i libri e chi ce li ha in questo momento — non lo storico
-dei prestiti già rientrati, né le persone che al momento non hanno niente fuori. **È voluto**: le
-statistiche degli anni passati la biblioteca le tiene per conto suo, e le metriche di Alexandreia
-partono da quando entra in servizio. Non è una mancanza da colmare.
+- **Archivio** — i libri e chi ce li ha adesso, con le colonne qui sopra
+- **Storico** — un prestito per riga: *Titolo, Autore, Prestato a, Prestato il, Rientro entro,
+  Rientrato il*. Se «Rientrato il» è vuoto, quel libro è ancora fuori.
+
+Serve sia da copia di sicurezza sia per spostare l'archivio su un altro computer: si esporta di
+qua, si ricarica di là con «Sostituisci tutto», e le metriche arrivano intere. Le righe dello
+storico **non creano libri**: si agganciano per titolo + autore a quelli del primo foglio.
+
+L'unica cosa che resta indietro sono le persone che non hanno mai preso niente in prestito: senza
+un prestito a cui agganciarle non compaiono in nessuno dei due fogli.
+
+Con più copie dello stesso titolo lo storico finisce tutto sulla prima: quale delle copie fisiche
+fosse fuori nel 2019 non lo sa più nessuno, e per le metriche — che raggruppano per libro — il
+conto torna comunque.
 
 **Carica** legge lo stesso formato — e anche l'Excel che avevano già loro. Mostra, colonna per
 colonna, quante celle sono piene, su quale campo la mapperebbe e tre valori d'esempio. **Niente

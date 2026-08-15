@@ -55,7 +55,8 @@ public partial class ImportView : UserControl, IReloadable
         try
         {
             var n = Export.Write(_db, path);
-            ExportResult.Text = $"Esportati {n} libri in {System.IO.Path.GetFileName(path)}.";
+            ExportResult.Text = $"Esportati {n.Books} libri e {n.Loans} prestiti " +
+                                $"in {System.IO.Path.GetFileName(path)}.";
         }
         catch (Exception ex)
         {
@@ -128,49 +129,54 @@ public partial class ImportView : UserControl, IReloadable
         UpdateTotal();
     }
 
+    IEnumerable<SheetMapping> Archivio => Selected.Where(s => !s.Report.IsHistory);
+    IEnumerable<SheetMapping> Storico => Selected.Where(s => s.Report.IsHistory);
+
     void UpdateTotal()
     {
         var scelti = Selected.ToList();
-        var libri = scelti.Sum(s => s.Report.Rows.Count);
-        var prestiti = scelti.Sum(s => s.Report.Loans);
-        var righe = scelti.Sum(s => s.Report.DataRows);
+        var libri = Archivio.Sum(s => s.Report.Rows.Count);
+        var prestiti = Archivio.Sum(s => s.Report.Loans);
+        var storici = Storico.Sum(s => s.ChiusiNelloStorico);
 
         Apply.Content = Replacing ? "Sostituisci" : "Importa";
 
         var parti = new List<string>();
         if (_sheets.Count > 1)
             parti.Add($"{scelti.Count} {(scelti.Count == 1 ? "foglio" : "fogli")} su {_sheets.Count}");
-        parti.Add($"{righe} righe → {libri} libri");
+        parti.Add($"{libri} libri");
         if (prestiti > 0) parti.Add($"{prestiti} già in prestito");
+        if (storici > 0) parti.Add($"{storici} nello storico");
 
         Summary.Text = _sheets.Count == 0 ? ""
             : scelti.Count == 0 ? "Nessun foglio da caricare."
             : string.Join("   ·   ", parti);
 
-        Apply.IsEnabled = libri > 0;
+        Apply.IsEnabled = libri > 0 || storici > 0;
     }
 
     // --- Scrittura -------------------------------------------------------
 
     async Task DoImport()
     {
-        var righe = Selected.SelectMany(s => s.Report.Rows).ToList();
-        if (righe.Count == 0) return;
+        var archivio = Archivio.SelectMany(s => s.Report.Rows).ToList();
+        var storico = Storico.SelectMany(s => s.Report.Rows).ToList();
+        if (archivio.Count == 0 && storico.Count == 0) return;
 
         var owner = TopLevel.GetTopLevel(this) as Window;
-        var quanti = _db.Books(limit: 1).Count > 0 || _db.Members(limit: 1).Count > 0;
 
         if (Replacing)
         {
             // La sola operazione irreversibile del programma: va chiesta per nome.
             if (!await Dialogs.Confirm(owner,
-                    $"Sto per cancellare tutto l'archivio — libri, utenti e storico dei prestiti — " +
-                    $"e rimetterci dentro le {righe.Count} righe di questo file.\n\n" +
+                    "Sto per cancellare tutto l'archivio — libri, utenti e storico dei prestiti — " +
+                    $"e rimetterci dentro i {archivio.Count} libri di questo file.\n\n" +
                     "Non si torna indietro. Procedo?",
                     "Sostituisci tutto"))
                 return;
         }
-        else if (quanti && !await Dialogs.Confirm(owner,
+        else if ((_db.Books(limit: 1).Count > 0 || _db.Members(limit: 1).Count > 0)
+                 && !await Dialogs.Confirm(owner,
                      "In archivio ci sono già dei dati: queste righe si aggiungono a quelli.\n\nProcedo?",
                      "Aggiungi"))
         {
@@ -179,9 +185,15 @@ public partial class ImportView : UserControl, IReloadable
 
         try
         {
-            var n = _db.Apply(righe, Replacing);
-            var prestiti = righe.Count(r => r.HasLoan);
-            Summary.Text = $"Caricati {n} libri" + (prestiti > 0 ? $", di cui {prestiti} già in prestito." : ".");
+            var n = _db.ApplyAll(archivio, storico, Replacing);
+
+            var parti = new List<string> { $"Caricati {n.Books} libri" };
+            if (n.OpenLoans > 0) parti.Add($"{n.OpenLoans} già in prestito");
+            if (n.History > 0) parti.Add($"{n.History} prestiti nello storico");
+            if (n.HistorySkipped > 0)
+                parti.Add($"{n.HistorySkipped} righe di storico saltate: il libro non è in archivio");
+
+            Summary.Text = string.Join(", ", parti) + ".";
             Apply.IsEnabled = false;
         }
         catch (Exception ex)

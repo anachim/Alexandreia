@@ -7,7 +7,10 @@ namespace Alexandreia;
 
 public record ColumnInfo(int Index, string Header, int Filled, string? MappedTo, string[] Samples);
 
-/// <summary>Una riga del foglio: il libro e, se c'è, a chi è prestato.</summary>
+/// <summary>
+/// Una riga del foglio: il libro e, se c'è, a chi è prestato.
+/// Nel foglio dello storico il libro non è da creare, è la chiave per ritrovarlo.
+/// </summary>
 public class ImportedRow
 {
     public required Book Book { get; init; }
@@ -15,6 +18,7 @@ public class ImportedRow
     public string? PersonNotes { get; init; }
     public DateTime? LoanedAt { get; init; }
     public DateTime? DueAt { get; init; }
+    public DateTime? ReturnedAt { get; init; }
 
     public bool HasLoan => !string.IsNullOrWhiteSpace(Person);
 }
@@ -31,6 +35,12 @@ public record ImportReport
 
     public List<Book> Books => [.. Rows.Select(r => r.Book)];
     public int Loans => Rows.Count(r => r.HasLoan);
+
+    /// <summary>
+    /// Un foglio con una colonna «Rientrato il» è lo storico: le sue righe non creano
+    /// libri, si agganciano a quelli che ci sono già. È il secondo foglio del nostro export.
+    /// </summary>
+    public bool IsHistory => Columns.Any(c => c.MappedTo == Import.FReturnedAt);
 
     /// <summary>Niente da caricare: foglio vuoto, o nessuna colonna riconosciuta come titolo.</summary>
     public bool Empty => Rows.Count == 0;
@@ -55,6 +65,7 @@ public static class Import
     public const string FPersonNotes = "Nota della persona";
     public const string FLoanedAt = "Prestato il";
     public const string FDueAt = "Rientro entro";
+    public const string FReturnedAt = "Rientrato il";
 
     /// <summary>Quanti giorni dura un prestito importato che non porta con sé una scadenza.</summary>
     public const int DefaultLoanDays = 30;
@@ -74,6 +85,7 @@ public static class Import
                         "nota lettore"]),
         (FLoanedAt,    ["prestato il", "data prestito", "data del prestito", "dal"]),
         (FDueAt,       ["rientro entro", "scadenza", "da restituire entro", "restituzione", "al"]),
+        (FReturnedAt,  ["rientrato il", "reso il", "restituito il", "data rientro", "data restituzione"]),
     ];
 
     public static readonly string[] Fields = [.. Synonyms.Select(s => s.Field)];
@@ -191,6 +203,7 @@ public static class Import
                 PersonNotes = Text(Cell(FPersonNotes)),
                 LoanedAt = ToDate(Cell(FLoanedAt)),
                 DueAt = ToDate(Cell(FDueAt)),
+                ReturnedAt = ToDate(Cell(FReturnedAt)),
             });
         }
 

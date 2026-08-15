@@ -11,7 +11,7 @@
                 <Button Name="DoExport" Content="Esporta…" DockPanel.Dock="Left" Margin="0,0,14,0" />
                 <TextBlock Name="ExportResult" VerticalAlignment="Center" Classes="muted"
                            TextWrapping="Wrap"
-                           Text="Salva tutto l'archivio in un file Excel, con chi ha in prestito cosa. È lo stesso formato che questa scheda sa rileggere, quindi serve sia da copia di sicurezza sia per portare i dati su un altro computer." />
+                           Text="Salva tutto l'archivio in un file Excel: un foglio coi libri e chi ce li ha adesso, un secondo foglio con lo storico dei prestiti. È lo stesso formato che questa scheda sa rileggere, quindi serve sia da copia di sicurezza sia per portare i dati su un altro computer." />
             </DockPanel>
         </Border>
 

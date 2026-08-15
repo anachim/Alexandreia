@@ -404,7 +404,18 @@ public class Db
     /// torna, l'archivio resta quello di prima invece di restare a metà.
     /// </summary>
     /// <param name="replace">Svuota l'archivio prima di scrivere (ripristino da backup).</param>
-    public int Apply(IEnumerable<ImportedRow> rows, bool replace = false)
+    public int Apply(IEnumerable<ImportedRow> rows, bool replace = false) =>
+        ApplyAll(rows, [], replace).Books;
+
+    public record ApplyCounts(int Books, int OpenLoans, int History, int HistorySkipped);
+
+    /// <summary>
+    /// Carica il foglio dei libri e, se c'è, quello dello storico. Le righe dello storico
+    /// non creano libri: si agganciano per titolo + autore a quelli appena scritti.
+    /// Tutto in una transazione sola, così un file mezzo sbagliato non lascia mezzo archivio.
+    /// </summary>
+    public ApplyCounts ApplyAll(
+        IEnumerable<ImportedRow> archivio, IEnumerable<ImportedRow> storico, bool replace = false)
     {
         using var c = Open();
         using var tx = c.BeginTransaction();
@@ -412,49 +423,84 @@ public class Db
         if (replace)
             c.Execute("DELETE FROM Loans; DELETE FROM Members; DELETE FROM Books;", transaction: tx);
 
-        var noti = c.Query<Member>("SELECT Id, FirstName, LastName FROM Members", transaction: tx)
+        var persone = c.Query<Member>("SELECT Id, FirstName, LastName FROM Members", transaction: tx)
             .GroupBy(m => NameKey(m.FullName))
             .ToDictionary(g => g.Key, g => g.First().Id);
 
-        var n = 0;
-        foreach (var row in rows)
+        // Con più copie dello stesso titolo lo storico finisce tutto sulla prima: quale
+        // delle copie fisiche fosse fuori nel 2019 non lo sa più nessuno, e ai fini delle
+        // metriche — che raggruppano per libro — il conto torna comunque.
+        var libri = replace
+            ? []
+            : c.Query<Book>("SELECT Id, Title, Author FROM Books", transaction: tx)
+                .GroupBy(b => NameKey($"{b.Title}|{b.Author}"))
+                .ToDictionary(g => g.Key, g => g.First().Id);
+
+        long PersonaId(ImportedRow row)
         {
-            var bookId = c.ExecuteScalar<long>(
-                "INSERT INTO Books (Title, Author, Notes) VALUES (@Title, @Author, @Notes) RETURNING Id",
-                row.Book, tx);
-            n++;
-
-            if (!row.HasLoan) continue;
-
             var persona = row.Person!.Trim();
             var chiave = NameKey(persona);
-            if (!noti.TryGetValue(chiave, out var memberId))
-            {
-                // Il nome intero finisce nel cognome: «Rossi Mario» e «Mario Rossi» sono
-                // indistinguibili, e sbagliare a spezzarli è peggio che non spezzarli.
-                memberId = c.ExecuteScalar<long>("""
-                    INSERT INTO Members (FirstName, LastName, Notes)
-                    VALUES ('', @persona, @note) RETURNING Id
-                    """, new { persona, note = row.PersonNotes }, tx);
-                noti[chiave] = memberId;
-            }
+            if (persone.TryGetValue(chiave, out var id)) return id;
 
+            // Il nome intero finisce nel cognome: «Rossi Mario» e «Mario Rossi» sono
+            // indistinguibili, e sbagliare a spezzarli è peggio che non spezzarli.
+            id = c.ExecuteScalar<long>("""
+                INSERT INTO Members (FirstName, LastName, Notes)
+                VALUES ('', @persona, @note) RETURNING Id
+                """, new { persona, note = row.PersonNotes }, tx);
+            persone[chiave] = id;
+            return id;
+        }
+
+        void Presta(long bookId, ImportedRow row, DateTime? rientrato)
+        {
             var prestatoIl = row.LoanedAt ?? DateTime.Today;
             c.Execute("""
-                INSERT INTO Loans (BookId, MemberId, LoanedAt, DueAt)
-                VALUES (@bookId, @memberId, @prestatoIl, @entro)
+                INSERT INTO Loans (BookId, MemberId, LoanedAt, DueAt, ReturnedAt)
+                VALUES (@bookId, @memberId, @prestatoIl, @entro, @rientrato)
                 """,
                 new
                 {
                     bookId,
-                    memberId,
+                    memberId = PersonaId(row),
                     prestatoIl,
                     entro = (row.DueAt ?? prestatoIl.AddDays(Import.DefaultLoanDays)).Date,
+                    rientrato,
                 }, tx);
         }
 
+        int scritti = 0, aperti = 0;
+        foreach (var row in archivio)
+        {
+            var bookId = c.ExecuteScalar<long>(
+                "INSERT INTO Books (Title, Author, Notes) VALUES (@Title, @Author, @Notes) RETURNING Id",
+                row.Book, tx);
+            scritti++;
+            libri.TryAdd(NameKey($"{row.Book.Title}|{row.Book.Author}"), bookId);
+
+            if (!row.HasLoan) continue;
+            Presta(bookId, row, null);
+            aperti++;
+        }
+
+        int storici = 0, saltati = 0;
+        foreach (var row in storico)
+        {
+            // I prestiti ancora aperti sono già arrivati dal foglio dei libri.
+            if (row.ReturnedAt is null || !row.HasLoan) continue;
+
+            if (!libri.TryGetValue(NameKey($"{row.Book.Title}|{row.Book.Author}"), out var bookId))
+            {
+                saltati++;
+                continue;
+            }
+
+            Presta(bookId, row, row.ReturnedAt);
+            storici++;
+        }
+
         tx.Commit();
-        return n;
+        return new ApplyCounts(scritti, aperti, storici, saltati);
     }
 
     static string NameKey(string s) => string.Join(' ',

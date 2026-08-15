@@ -318,7 +318,7 @@ public class UiTests : IDisposable
         var file = Path.Combine(Path.GetTempPath(), $"alexandreia-ui-export-{Guid.NewGuid():N}.xlsx");
         try
         {
-            Assert.Equal(1, Export.Write(_db, file));
+            Assert.Equal(1, Export.Write(_db, file).Books);
 
             var w = Open();
             Tab(w, TabDati);
