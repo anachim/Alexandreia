@@ -43,7 +43,8 @@ public partial class LibriView : UserControl, IReloadable
     {
         Message.Text = text;
         Message.IsVisible = true;
-        Message.Foreground = ok ? Brushes.SeaGreen : Brushes.IndianRed;
+        Message.Classes.Set("overdue", !ok);
+        Message.Classes.Set("ok", ok);
     }
 
     static Book Row(object? sender) => (Book)((Control)sender!).Tag!;

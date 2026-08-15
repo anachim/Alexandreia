@@ -35,6 +35,9 @@ Le schede *Fuori adesso* e *In ritardo* si cliccano e portano all'elenco già fi
 
 **Dati** — export e import, sotto.
 
+In alto a destra si passa fra **tema chiaro e scuro**. La scelta resta: alla prima apertura si
+segue il sistema, dopo quello che hai scelto tu.
+
 ## Come sono fatti i dati
 
 Un **libro** ha titolo, autore e una nota. Basta.

@@ -11,7 +11,17 @@ public partial class App : Application
     public override void OnFrameworkInitializationCompleted()
     {
         if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
-            desktop.MainWindow = new MainWindow(new Db(Db.DefaultPath()));
+        {
+            var db = new Db(Db.DefaultPath());
+
+            // Alla prima apertura si segue il sistema; dopo, quello che ha scelto l'utente.
+            if (db.Setting(Db.TemaKey) is { } tema)
+                RequestedThemeVariant = tema == "scuro"
+                    ? Avalonia.Styling.ThemeVariant.Dark
+                    : Avalonia.Styling.ThemeVariant.Light;
+
+            desktop.MainWindow = new MainWindow(db);
+        }
 
         base.OnFrameworkInitializationCompleted();
     }

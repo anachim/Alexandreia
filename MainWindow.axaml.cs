@@ -1,5 +1,7 @@
+using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Interactivity;
+using Avalonia.Styling;
 
 namespace Alexandreia;
 
@@ -41,9 +43,26 @@ public partial class MainWindow : Window
         };
 
         Tabs.SelectionChanged += (_, _) => Current?.Reload();
+
+        Tema.Click += (_, _) => Applica(Scuro ? "chiaro" : "scuro", db);
+        Mostra();
     }
 
     IReloadable? Current => (Tabs.SelectedItem as TabItem)?.Content as IReloadable;
+
+    static bool Scuro => Application.Current?.ActualThemeVariant == ThemeVariant.Dark;
+
+    /// <summary>Applica il tema e se lo ricorda: un tema che si dimentica non è una scelta.</summary>
+    void Applica(string tema, Db db)
+    {
+        if (Application.Current is { } app)
+            app.RequestedThemeVariant = tema == "scuro" ? ThemeVariant.Dark : ThemeVariant.Light;
+
+        db.SetSetting(Db.TemaKey, tema);
+        Mostra();
+    }
+
+    void Mostra() => Tema.Content = Scuro ? "Tema chiaro" : "Tema scuro";
 
     protected override void OnLoaded(RoutedEventArgs e)
     {

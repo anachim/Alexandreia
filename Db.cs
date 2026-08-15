@@ -147,7 +147,15 @@ public class Db
 
         CREATE INDEX IF NOT EXISTS ix_loans_open ON Loans(BookId) WHERE ReturnedAt IS NULL;
         CREATE INDEX IF NOT EXISTS ix_loans_when ON Loans(LoanedAt);
+
+        CREATE TABLE IF NOT EXISTS Settings (
+            Key   TEXT NOT NULL PRIMARY KEY,
+            Value TEXT NOT NULL
+        );
         """;
+
+    /// <summary>Preferenze dell'applicazione, tenute accanto ai dati invece che in un file a parte.</summary>
+    public const string TemaKey = "tema";
 
     // Un libro è una copia sola: è libero se non ha un prestito ancora aperto.
     const string AvailableExpr =
@@ -195,6 +203,21 @@ public class Db
         var c = new SqliteConnection(_cs);
         c.Open();
         return c;
+    }
+
+    // --- Preferenze -----------------------------------------------------
+
+    public string? Setting(string key)
+    {
+        using var c = Open();
+        return c.QuerySingleOrDefault<string>("SELECT Value FROM Settings WHERE Key = @key", new { key });
+    }
+
+    public void SetSetting(string key, string value)
+    {
+        using var c = Open();
+        c.Execute("INSERT INTO Settings (Key, Value) VALUES (@key, @value) " +
+                  "ON CONFLICT(Key) DO UPDATE SET Value = @value", new { key, value });
     }
 
     // --- Libri ---------------------------------------------------------

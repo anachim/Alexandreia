@@ -36,7 +36,8 @@ public partial class UtentiView : UserControl, IReloadable
     {
         Message.Text = text;
         Message.IsVisible = true;
-        Message.Foreground = ok ? Brushes.SeaGreen : Brushes.IndianRed;
+        Message.Classes.Set("overdue", !ok);
+        Message.Classes.Set("ok", ok);
     }
 
     async void OnEdit(object? sender, RoutedEventArgs e) => await Edit((Member)((Control)sender!).Tag!);

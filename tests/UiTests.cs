@@ -4,6 +4,7 @@ using Avalonia.Controls;
 using Avalonia.Headless;
 using Avalonia.Headless.XUnit;
 using Avalonia.Interactivity;
+using Avalonia.Styling;
 using Avalonia.Threading;
 using Avalonia.VisualTree;
 
@@ -88,6 +89,44 @@ public class UiTests : IDisposable
         view.Load(Path.Combine(AppContext.BaseDirectory, "fixtures", fixture));
         Settle();
         return view;
+    }
+
+    // --- Tema -----------------------------------------------------------
+
+    [AvaloniaFact]
+    public void Il_tema_si_cambia_e_se_lo_ricorda()
+    {
+        var w = Open();
+        var bottone = Named<Button>(w, "Tema");
+
+        Click(bottone);
+        Assert.Equal(ThemeVariant.Dark, Avalonia.Application.Current!.ActualThemeVariant);
+        Assert.Equal("Tema chiaro", bottone.Content);
+        Assert.Equal("scuro", _db.Setting(Db.TemaKey));
+
+        Click(bottone);
+        Assert.Equal(ThemeVariant.Light, Avalonia.Application.Current!.ActualThemeVariant);
+        Assert.Equal("Tema scuro", bottone.Content);
+        Assert.Equal("chiaro", _db.Setting(Db.TemaKey));
+    }
+
+    [AvaloniaFact]
+    public void I_colori_delle_schede_seguono_il_tema()
+    {
+        _db.Lend(_libro, _ipazia, DateTime.Today.AddDays(-2));
+
+        var w = Open();
+        Tab(w, TabMetriche);
+
+        var numero = Named<WrapPanel>(w, "Now").GetVisualDescendants()
+            .OfType<TextBlock>().First(t => t.FontSize == 26);
+        var chiaro = numero.Foreground;
+
+        Click(Named<Button>(w, "Tema"));
+
+        // Le schede sono costruite a mano: con un colore fisso resterebbero del tema
+        // di quando sono nate, invece di seguire quello nuovo.
+        Assert.NotEqual(chiaro, numero.Foreground);
     }
 
     // --- Libri ----------------------------------------------------------

@@ -1,7 +1,7 @@
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Layout;
-using Avalonia.Media;
+using Avalonia.Markup.Xaml.MarkupExtensions;
 
 namespace Alexandreia;
 
@@ -135,40 +135,32 @@ public partial class MetricheView : UserControl, IReloadable
         return Math.Max(1, (fine.Year - da.Year) * 12 + fine.Month - da.Month + 1);
     }
 
+    /// <summary>
+    /// Colore da risorsa dinamica e non risolto una volta sola: le schede sono costruite
+    /// a mano, e con un colore fisso resterebbero del tema di quando sono nate.
+    /// </summary>
+    static TextBlock Testo(string testo, double corpo, string colore) =>
+        new TextBlock { Text = testo, FontSize = corpo }
+            .Tinta(colore);
+
     Border Scheda(object valore, string etichetta, bool allarme = false, string? delta = null, string? vai = null)
     {
-        var numero = new TextBlock
-        {
-            Text = valore.ToString(),
-            FontSize = 26,
-            Foreground = allarme
-                ? this.FindResource("Late") as IBrush
-                : this.FindResource("Ink") as IBrush,
-        };
-
         var contenuto = new StackPanel
         {
             Spacing = 1,
             Children =
             {
-                numero,
-                new TextBlock
-                {
-                    Text = etichetta,
-                    FontSize = 12,
-                    Foreground = this.FindResource("Muted") as IBrush,
-                },
+                Testo(valore.ToString() ?? "", 26, allarme ? "Late" : "Ink"),
+                Testo(etichetta, 12, "Muted"),
             },
         };
 
         if (delta is not null)
-            contenuto.Children.Add(new TextBlock
-            {
-                Text = delta,
-                FontSize = 11,
-                Margin = new Thickness(0, 4, 0, 0),
-                Foreground = this.FindResource("Muted") as IBrush,
-            });
+        {
+            var d = Testo(delta, 11, "Muted");
+            d.Margin = new Thickness(0, 4, 0, 0);
+            contenuto.Children.Add(d);
+        }
 
         var card = new Border
         {
@@ -183,15 +175,22 @@ public partial class MetricheView : UserControl, IReloadable
         {
             card.Classes.Add("clickable");
             card.PointerPressed += (_, _) => ApriPrestiti?.Invoke(vai);
-            contenuto.Children.Add(new TextBlock
-            {
-                Text = "vedi l'elenco →",
-                FontSize = 11,
-                Margin = new Thickness(0, 4, 0, 0),
-                Foreground = this.FindResource("Stamp") as IBrush,
-            });
+
+            var link = Testo("vedi l'elenco →", 11, "Stamp");
+            link.Margin = new Thickness(0, 4, 0, 0);
+            contenuto.Children.Add(link);
         }
 
         return card;
+    }
+}
+
+static class Tinte
+{
+    /// <summary>Lega il colore alla risorsa, così segue il tema invece di restare fisso.</summary>
+    public static TextBlock Tinta(this TextBlock t, string risorsa)
+    {
+        t[!TextBlock.ForegroundProperty] = new DynamicResourceExtension(risorsa);
+        return t;
     }
 }

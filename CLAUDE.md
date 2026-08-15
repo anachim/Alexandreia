@@ -130,8 +130,19 @@ file che Excel apre davvero, ExcelDataReader è l'unico dei due che regge i vecc
 
 ## Aspetto
 
-Tutti i colori e gli stili stanno in `App.axaml`, in un blocco solo. Non mettere colori
-letterali nelle viste: usa `{DynamicResource ...}`.
+Tutti i colori e gli stili stanno in `App.axaml`, in un blocco solo, dentro
+`ThemeDictionaries` — **una voce chiara e una scura per ogni chiave**. Non mettere colori
+letterali da nessun'altra parte: usa `{DynamicResource ...}`, o nel codice
+`t[!TextBlock.ForegroundProperty] = new DynamicResourceExtension("Ink")`. Un colore risolto una
+volta sola resta del tema di quando è nato, e le schede delle metriche sono costruite a mano.
+
+Lo scuro **non è l'inverso del chiaro**: i colori conservano il significato, non la luminosità.
+Viola e vermiglio si schiariscono per restare leggibili su fondo scuro, e il fondo resta blu
+d'inchiostro invece di diventare nero. Di conseguenza il testo sopra un bottone pieno cambia:
+`OnAccent` è bianco nel chiaro e scuro nello scuro — bianco su viola chiaro non si legge.
+
+La scelta del tema sta nella tabella `Settings` del database, insieme ai dati: alla prima
+apertura si segue il sistema, dopo si segue l'utente.
 
 Il riferimento non è il libro antico ma **l'amministrazione della biblioteca** — registri,
 cartellini, e il timbro viola della data di restituzione, da cui viene l'accento `Stamp`. È una
