@@ -21,7 +21,7 @@
             <ItemsControl Name="Months">
                 <ItemsControl.ItemTemplate>
                     <DataTemplate x:DataType="m:Bar">
-                        <Grid ColumnDefinitions="80,50,*" Margin="0,2">
+                        <Grid ColumnDefinitions="80,50,400" Margin="0,2">
                             <TextBlock Text="{Binding Label}" />
                             <TextBlock Grid.Column="1" Text="{Binding Count}" />
                             <Border Grid.Column="2" Background="#7a5c2e" Height="12" CornerRadius="2"
@@ -36,11 +36,14 @@
             <ItemsControl Name="Top">
                 <ItemsControl.ItemTemplate>
                     <DataTemplate x:DataType="m:Bar">
-                        <Grid ColumnDefinitions="300,180,50,240" Margin="0,2">
+                        <Grid ColumnDefinitions="280,170,200,50,200" Margin="0,2">
                             <TextBlock Text="{Binding Label}" TextTrimming="CharacterEllipsis" />
-                            <TextBlock Grid.Column="1" Text="{Binding Sub}" Classes="muted" />
-                            <TextBlock Grid.Column="2" Text="{Binding Count}" />
-                            <Border Grid.Column="3" Background="#7a5c2e" Height="12" CornerRadius="2"
+                            <TextBlock Grid.Column="1" Text="{Binding Sub}" Classes="muted"
+                                       TextTrimming="CharacterEllipsis" />
+                            <TextBlock Grid.Column="2" Text="{Binding Note}" Classes="muted"
+                                       TextTrimming="CharacterEllipsis" />
+                            <TextBlock Grid.Column="3" Text="{Binding Count}" />
+                            <Border Grid.Column="4" Background="#7a5c2e" Height="12" CornerRadius="2"
                                     Width="{Binding Width}" HorizontalAlignment="Left" />
                         </Grid>
                     </DataTemplate>

@@ -55,7 +55,7 @@ public partial class ImportView : UserControl, IReloadable
         try
         {
             var n = Export.Write(_db, path);
-            ExportResult.Text = $"Esportati {n.Books} libri e {n.Loans} prestiti " +
+            ExportResult.Text = $"Esportati {n.Books} libri, {n.Members} utenti e {n.Loans} prestiti " +
                                 $"in {System.IO.Path.GetFileName(path)}.";
         }
         catch (Exception ex)
@@ -129,7 +129,8 @@ public partial class ImportView : UserControl, IReloadable
         UpdateTotal();
     }
 
-    IEnumerable<SheetMapping> Archivio => Selected.Where(s => !s.Report.IsHistory);
+    IEnumerable<SheetMapping> Anagrafica => Selected.Where(s => s.Report.IsMembers);
+    IEnumerable<SheetMapping> Archivio => Selected.Where(s => !s.Report.IsMembers && !s.Report.IsHistory);
     IEnumerable<SheetMapping> Storico => Selected.Where(s => s.Report.IsHistory);
 
     void UpdateTotal()
@@ -138,6 +139,7 @@ public partial class ImportView : UserControl, IReloadable
         var libri = Archivio.Sum(s => s.Report.Rows.Count);
         var prestiti = Archivio.Sum(s => s.Report.Loans);
         var storici = Storico.Sum(s => s.ChiusiNelloStorico);
+        var utenti = Anagrafica.Sum(s => s.Report.Members.Count);
 
         Apply.Content = Replacing ? "Sostituisci" : "Importa";
 
@@ -145,6 +147,7 @@ public partial class ImportView : UserControl, IReloadable
         if (_sheets.Count > 1)
             parti.Add($"{scelti.Count} {(scelti.Count == 1 ? "foglio" : "fogli")} su {_sheets.Count}");
         parti.Add($"{libri} libri");
+        if (utenti > 0) parti.Add($"{utenti} utenti");
         if (prestiti > 0) parti.Add($"{prestiti} già in prestito");
         if (storici > 0) parti.Add($"{storici} nello storico");
 
@@ -152,7 +155,7 @@ public partial class ImportView : UserControl, IReloadable
             : scelti.Count == 0 ? "Nessun foglio da caricare."
             : string.Join("   ·   ", parti);
 
-        Apply.IsEnabled = libri > 0 || storici > 0;
+        Apply.IsEnabled = libri > 0 || storici > 0 || utenti > 0;
     }
 
     // --- Scrittura -------------------------------------------------------
@@ -161,7 +164,8 @@ public partial class ImportView : UserControl, IReloadable
     {
         var archivio = Archivio.SelectMany(s => s.Report.Rows).ToList();
         var storico = Storico.SelectMany(s => s.Report.Rows).ToList();
-        if (archivio.Count == 0 && storico.Count == 0) return;
+        var anagrafica = Anagrafica.SelectMany(s => s.Report.Members).ToList();
+        if (archivio.Count == 0 && storico.Count == 0 && anagrafica.Count == 0) return;
 
         var owner = TopLevel.GetTopLevel(this) as Window;
 
@@ -185,9 +189,10 @@ public partial class ImportView : UserControl, IReloadable
 
         try
         {
-            var n = _db.ApplyAll(archivio, storico, Replacing);
+            var n = _db.ApplyAll(archivio, storico, anagrafica, Replacing);
 
             var parti = new List<string> { $"Caricati {n.Books} libri" };
+            if (n.Members > 0) parti.Add($"{n.Members} utenti");
             if (n.OpenLoans > 0) parti.Add($"{n.OpenLoans} già in prestito");
             if (n.History > 0) parti.Add($"{n.History} prestiti nello storico");
             if (n.HistorySkipped > 0)

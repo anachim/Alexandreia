@@ -30,6 +30,7 @@ public record ImportReport
     public int DataRows { get; init; }
     public List<ColumnInfo> Columns { get; init; } = [];
     public List<ImportedRow> Rows { get; init; } = [];
+    public List<Member> Members { get; init; } = [];
     public int SkippedNoTitle { get; init; }
     public List<string> Warnings { get; init; } = [];
 
@@ -37,13 +38,19 @@ public record ImportReport
     public int Loans => Rows.Count(r => r.HasLoan);
 
     /// <summary>
+    /// Un foglio con una colonna «Cognome» è l'anagrafica: le sue righe creano persone,
+    /// non libri. È il terzo foglio del nostro export, e va caricato per primo.
+    /// </summary>
+    public bool IsMembers => Columns.Any(c => c.MappedTo == Import.FLastName);
+
+    /// <summary>
     /// Un foglio con una colonna «Rientrato il» è lo storico: le sue righe non creano
     /// libri, si agganciano a quelli che ci sono già. È il secondo foglio del nostro export.
     /// </summary>
-    public bool IsHistory => Columns.Any(c => c.MappedTo == Import.FReturnedAt);
+    public bool IsHistory => !IsMembers && Columns.Any(c => c.MappedTo == Import.FReturnedAt);
 
-    /// <summary>Niente da caricare: foglio vuoto, o nessuna colonna riconosciuta come titolo.</summary>
-    public bool Empty => Rows.Count == 0;
+    /// <summary>Niente da caricare.</summary>
+    public bool Empty => Rows.Count == 0 && Members.Count == 0;
 }
 
 /// <summary>
@@ -66,6 +73,8 @@ public static class Import
     public const string FLoanedAt = "Prestato il";
     public const string FDueAt = "Rientro entro";
     public const string FReturnedAt = "Rientrato il";
+    public const string FLastName = "Cognome";
+    public const string FFirstName = "Nome";
 
     /// <summary>Quanti giorni dura un prestito importato che non porta con sé una scadenza.</summary>
     public const int DefaultLoanDays = 30;
@@ -86,6 +95,8 @@ public static class Import
         (FLoanedAt,    ["prestato il", "data prestito", "data del prestito", "dal"]),
         (FDueAt,       ["rientro entro", "scadenza", "da restituire entro", "restituzione", "al"]),
         (FReturnedAt,  ["rientrato il", "reso il", "restituito il", "data rientro", "data restituzione"]),
+        (FLastName,    ["cognome", "cognome utente"]),
+        (FFirstName,   ["nome", "nome utente"]),
     ];
 
     public static readonly string[] Fields = [.. Synonyms.Select(s => s.Field)];
@@ -159,7 +170,8 @@ public static class Import
             map[i] = field;
         }
 
-        if (!claimed.Contains(FTitle))
+        var anagrafica = claimed.Contains(FLastName);
+        if (!anagrafica && !claimed.Contains(FTitle))
             warnings.Add("Nessuna colonna riconosciuta come Titolo: indica a mano quale colonna lo contiene.");
 
         var data = rows.Skip(headerRow + 1).ToList();
@@ -177,6 +189,7 @@ public static class Import
         }
 
         var righe = new List<ImportedRow>();
+        var persone = new List<Member>();
         var skipped = 0;
 
         foreach (var row in data)
@@ -185,6 +198,22 @@ public static class Import
             {
                 var i = Array.IndexOf(map, field);
                 return i >= 0 && i < row.Length ? row[i] : null;
+            }
+
+            // Foglio anagrafica: crea persone, non libri. Serve a non perdere chi al momento
+            // non ha niente in prestito, e a tenere cognome e nome separati nel giro completo.
+            if (anagrafica)
+            {
+                var cognome = Text(Cell(FLastName));
+                if (cognome is null) { skipped++; continue; }
+
+                persone.Add(new Member
+                {
+                    LastName = cognome,
+                    FirstName = Text(Cell(FFirstName)) ?? "",
+                    Notes = Text(Cell(FPersonNotes)) ?? Text(Cell(FNotes)),
+                });
+                continue;
             }
 
             var title = Text(Cell(FTitle));
@@ -214,6 +243,7 @@ public static class Import
             DataRows = data.Count,
             Columns = columns,
             Rows = righe,
+            Members = persone,
             SkippedNoTitle = skipped,
             Warnings = warnings,
         };

@@ -14,6 +14,7 @@ public static class Export
 {
     public const string SheetArchive = "Archivio";
     public const string SheetHistory = "Storico";
+    public const string SheetMembers = "Utenti";
 
     public static readonly string[] Headers =
     [
@@ -27,14 +28,17 @@ public static class Export
         Import.FLoanedAt, Import.FDueAt, Import.FReturnedAt,
     ];
 
+    public static readonly string[] MemberHeaders = [Import.FLastName, Import.FFirstName, Import.FPersonNotes];
+
     public static string SuggestedName(DateTime now) => $"alexandreia-{now:yyyy-MM-dd}.xlsx";
 
-    public record Counts(int Books, int Loans);
+    public record Counts(int Books, int Loans, int Members);
 
     public static Counts Write(Db db, string path)
     {
         var righe = db.ForExport();
         var storico = db.Loans(openOnly: false, limit: int.MaxValue);
+        var utenti = db.Members(limit: int.MaxValue);
 
         using var wb = new XLWorkbook();
 
@@ -73,8 +77,23 @@ public static class Export
         Date(st, 4, 6);
         Chiudi(st);
 
+        // Terzo foglio: l'anagrafica intera, anche chi al momento non ha niente fuori —
+        // senza, quelle persone si perderebbero nel passaggio da un PC all'altro. Cognome
+        // e nome restano separati, e al ricarico non finiscono appiccicati insieme.
+        var ut = wb.AddWorksheet(SheetMembers);
+        Intestazioni(ut, MemberHeaders);
+        for (var r = 0; r < utenti.Count; r++)
+        {
+            var m = utenti[r];
+            var y = r + 2;
+            ut.Cell(y, 1).Value = m.LastName;
+            ut.Cell(y, 2).Value = m.FirstName;
+            ut.Cell(y, 3).Value = m.Notes ?? "";
+        }
+        Chiudi(ut);
+
         wb.SaveAs(path);
-        return new Counts(righe.Count, storico.Count);
+        return new Counts(righe.Count, storico.Count, utenti.Count);
     }
 
     static void Intestazioni(IXLWorksheet ws, string[] headers)

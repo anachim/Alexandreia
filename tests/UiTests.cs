@@ -230,8 +230,15 @@ public class UiTests : IDisposable
         // il colore predefinito, lo azzera, e il numero sparisce senza errori.
         var numeri = Named<WrapPanel>(w, "Cards").GetVisualDescendants()
             .OfType<TextBlock>().Where(t => t.FontSize == 24).ToList();
-        Assert.Equal(7, numeri.Count);
+        Assert.Equal(8, numeri.Count);
         Assert.All(numeri, n => Assert.NotNull(n.Foreground));
+
+        // La media si conta dai mesi con movimento, non dai dodici del periodo: su un
+        // archivio appena avviato un prestito nel primo mese è 1, non 0,1.
+        var media = w.GetVisualDescendants().OfType<TextBlock>()
+            .First(t => t.Text == "Media al mese").FindAncestorOfType<StackPanel>()!
+            .GetVisualDescendants().OfType<TextBlock>().First();
+        Assert.Equal("1", media.Text);
     }
 
     // --- Dati: import ----------------------------------------------------
@@ -318,7 +325,9 @@ public class UiTests : IDisposable
         var file = Path.Combine(Path.GetTempPath(), $"alexandreia-ui-export-{Guid.NewGuid():N}.xlsx");
         try
         {
-            Assert.Equal(1, Export.Write(_db, file).Books);
+            var scritto = Export.Write(_db, file);
+            Assert.Equal(1, scritto.Books);
+            Assert.Equal(1, scritto.Members);
 
             var w = Open();
             Tab(w, TabDati);

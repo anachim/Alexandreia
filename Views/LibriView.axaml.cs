@@ -17,7 +17,8 @@ public partial class LibriView : UserControl, IReloadable
     {
         _db = db;
         Grid.ItemsSource = _books;
-        Person.DisplayMemberBinding = new Avalonia.Data.Binding(nameof(Member.FullName));
+        // Label e non FullName: con due omonimi la nota è l'unico modo di distinguerli.
+        Person.DisplayMemberBinding = new Avalonia.Data.Binding(nameof(Member.Label));
 
         Search.TextChanged += (_, _) => Reload();
         OnlyAvailable.IsCheckedChanged += (_, _) => Reload();

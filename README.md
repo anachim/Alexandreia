@@ -44,18 +44,21 @@ Tutto dalla scheda **Dati**, in un unico formato Excel:
 | Prestato il | opzionale |
 | Rientro entro | opzionale, altrimenti 30 giorni |
 
-**Esporta** salva l'archivio in un file con **due fogli**:
+**Esporta** salva l'archivio in un file con **tre fogli**:
 
 - **Archivio** — i libri e chi ce li ha adesso, con le colonne qui sopra
 - **Storico** — un prestito per riga: *Titolo, Autore, Prestato a, Prestato il, Rientro entro,
   Rientrato il*. Se «Rientrato il» è vuoto, quel libro è ancora fuori.
+- **Utenti** — *Cognome, Nome, Nota della persona*: l'anagrafica intera, anche chi al momento
+  non ha niente in prestito.
 
 Serve sia da copia di sicurezza sia per spostare l'archivio su un altro computer: si esporta di
-qua, si ricarica di là con «Sostituisci tutto», e le metriche arrivano intere. Le righe dello
-storico **non creano libri**: si agganciano per titolo + autore a quelli del primo foglio.
+qua, si ricarica di là con «Sostituisci tutto», e arriva tutto — metriche e anagrafica comprese.
 
-L'unica cosa che resta indietro sono le persone che non hanno mai preso niente in prestito: senza
-un prestito a cui agganciarle non compaiono in nessuno dei due fogli.
+L'ordine conta ed è automatico: **prima gli utenti**, così i nomi che compaiono in «Prestato a»
+ritrovano la persona giusta con cognome e nome separati invece di crearne una nuova col nome tutto
+appiccicato nel cognome. Le righe dello **storico non creano libri**: si agganciano per titolo +
+autore a quelli del primo foglio.
 
 Con più copie dello stesso titolo lo storico finisce tutto sulla prima: quale delle copie fisiche
 fosse fuori nel 2019 non lo sa più nessuno, e per le metriche — che raggruppano per libro — il

@@ -99,15 +99,26 @@ perché lo stesso campo cambia nome da un foglio all'altro. Un foglio da cui non
 I nomi dei campi (`Import.FTitle` e compagnia) sono **le etichette italiane** che l'utente vede
 nella tendina, non identificatori interni: cambiarli cambia la UI e va fatto lì.
 
-`Export.Write` scrive **lo stesso formato** che `Plan` sa leggere, su due fogli: `Archivio`
-(libri e prestiti aperti) e `Storico` (tutti i prestiti, uno per riga). Se aggiungi un campo va in
-`Synonyms`, in `Export.Headers` e in `Db.ExportRow`, altrimenti il giro si rompe a metà.
+`Export.Write` scrive **lo stesso formato** che `Plan` sa leggere, su tre fogli: `Archivio`
+(libri e prestiti aperti), `Storico` (tutti i prestiti, uno per riga) e `Utenti` (anagrafica
+intera). Se aggiungi un campo va in `Synonyms`, in `Export.Headers` e in `Db.ExportRow`,
+altrimenti il giro si rompe a metà.
 
-Un foglio è lo storico se ha una colonna mappata su `Import.FReturnedAt` — regola strutturale, non
-basata sul nome del foglio. Le sue righe **non creano libri**: `Db.ApplyAll` le aggancia per
-titolo + autore ai libri del primo foglio, e conta a parte quelle che non trovano un libro. Le
-righe di storico ancora aperte vengono ignorate: quel prestito è già arrivato dal foglio Archivio,
-e senza quel salto arriverebbe due volte.
+Il tipo di foglio si riconosce **dalle colonne, non dal nome**:
+
+- colonna mappata su `FLastName` → anagrafica (`IsMembers`)
+- colonna mappata su `FReturnedAt` → storico (`IsHistory`)
+- altrimenti → libri
+
+`Db.ApplyAll` li scrive in quest'ordine, e **l'ordine è il punto**: senza l'anagrafica per prima,
+i nomi in «Prestato a» creerebbero persone nuove col nome intero nel cognome, e il giro
+export → import degraderebbe i dati a ogni passaggio. Il foglio `Utenti` esiste anche per non
+perdere chi al momento non ha niente fuori.
+
+Le righe dello storico **non creano libri**: si agganciano per titolo + autore, e quelle che non
+trovano un libro sono contate a parte invece di sparire. Le righe di storico ancora aperte
+vengono ignorate: quel prestito è già arrivato dal foglio `Archivio`, e senza quel salto
+arriverebbe due volte.
 
 Il giro export → import è coperto da `Il_giro_completo_porta_anche_i_prestiti_gia_rientrati`.
 

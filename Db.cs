@@ -38,6 +38,14 @@ public class Member
     public int OpenLoans { get; set; } // calcolata
 
     public string FullName => $"{LastName} {FirstName}".Trim();
+
+    /// <summary>
+    /// Come compare nella tendina del prestito: senza la nota, due omonimi sono
+    /// indistinguibili proprio nel momento in cui bisogna sceglierne uno.
+    /// </summary>
+    public string Label => Notes is { Length: > 0 } n
+        ? $"{FullName} — {(n.Length > 40 ? n[..39] + "…" : n)}"
+        : FullName;
 }
 
 public class Loan
@@ -80,6 +88,7 @@ public record TopBook
 {
     public string Title { get; set; } = "";
     public string Author { get; set; } = "";
+    public string? Notes { get; set; } // per distinguere quale copia fisica è
     public int Loans { get; set; }
 }
 
@@ -338,7 +347,7 @@ public class Db
     {
         using var c = Open();
         return c.Query<TopBook>("""
-            SELECT b.Title, b.Author, COUNT(*) AS Loans
+            SELECT b.Title, b.Author, b.Notes, COUNT(*) AS Loans
             FROM Loans l JOIN Books b ON b.Id = l.BookId
             WHERE l.LoanedAt >= @since
             GROUP BY l.BookId
@@ -405,17 +414,22 @@ public class Db
     /// </summary>
     /// <param name="replace">Svuota l'archivio prima di scrivere (ripristino da backup).</param>
     public int Apply(IEnumerable<ImportedRow> rows, bool replace = false) =>
-        ApplyAll(rows, [], replace).Books;
+        ApplyAll(rows, [], [], replace).Books;
 
-    public record ApplyCounts(int Books, int OpenLoans, int History, int HistorySkipped);
+    public record ApplyCounts(int Books, int OpenLoans, int History, int HistorySkipped, int Members);
 
     /// <summary>
-    /// Carica il foglio dei libri e, se c'è, quello dello storico. Le righe dello storico
-    /// non creano libri: si agganciano per titolo + autore a quelli appena scritti.
+    /// Carica i tre fogli: anagrafica, libri e storico. L'anagrafica va per prima, così i
+    /// nomi che compaiono in «Prestato a» ritrovano la persona giusta con cognome e nome
+    /// separati invece di crearne una nuova col nome tutto appiccicato nel cognome.
+    /// Le righe dello storico non creano libri: si agganciano per titolo + autore.
     /// Tutto in una transazione sola, così un file mezzo sbagliato non lascia mezzo archivio.
     /// </summary>
     public ApplyCounts ApplyAll(
-        IEnumerable<ImportedRow> archivio, IEnumerable<ImportedRow> storico, bool replace = false)
+        IEnumerable<ImportedRow> archivio,
+        IEnumerable<ImportedRow> storico,
+        IEnumerable<Member> anagrafica,
+        bool replace = false)
     {
         using var c = Open();
         using var tx = c.BeginTransaction();
@@ -426,6 +440,19 @@ public class Db
         var persone = c.Query<Member>("SELECT Id, FirstName, LastName FROM Members", transaction: tx)
             .GroupBy(m => NameKey(m.FullName))
             .ToDictionary(g => g.Key, g => g.First().Id);
+
+        var utenti = 0;
+        foreach (var m in anagrafica)
+        {
+            var chiave = NameKey(m.FullName);
+            if (persone.ContainsKey(chiave)) continue;
+
+            persone[chiave] = c.ExecuteScalar<long>("""
+                INSERT INTO Members (FirstName, LastName, Notes)
+                VALUES (@FirstName, @LastName, @Notes) RETURNING Id
+                """, m, tx);
+            utenti++;
+        }
 
         // Con più copie dello stesso titolo lo storico finisce tutto sulla prima: quale
         // delle copie fisiche fosse fuori nel 2019 non lo sa più nessuno, e ai fini delle
@@ -500,7 +527,7 @@ public class Db
         }
 
         tx.Commit();
-        return new ApplyCounts(scritti, aperti, storici, saltati);
+        return new ApplyCounts(scritti, aperti, storici, saltati, utenti);
     }
 
     static string NameKey(string s) => string.Join(' ',

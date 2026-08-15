@@ -278,14 +278,17 @@ public class ImportTests
             Con(altro =>
             {
                 var fogli = Import.ReadWorkbook(file);
-                Assert.Equal([Export.SheetArchive, Export.SheetHistory], fogli.Select(f => f.Name));
+                Assert.Equal([Export.SheetArchive, Export.SheetHistory, Export.SheetMembers],
+                    fogli.Select(f => f.Name));
 
                 var archivio = Import.Plan(fogli[0].Rows, fogli[0].Name);
                 var storico = Import.Plan(fogli[1].Rows, fogli[1].Name);
+                var anagrafica = Import.Plan(fogli[2].Rows, fogli[2].Name);
                 Assert.False(archivio.IsHistory);
                 Assert.True(storico.IsHistory);
+                Assert.True(anagrafica.IsMembers);
 
-                var c = altro.ApplyAll(archivio.Rows, storico.Rows, replace: true);
+                var c = altro.ApplyAll(archivio.Rows, storico.Rows, anagrafica.Members, replace: true);
                 Assert.Equal(2, c.Books);
                 Assert.Equal(1, c.OpenLoans);
                 Assert.Equal(1, c.History);      // il prestito già rientrato
@@ -305,6 +308,77 @@ public class ImportTests
     }
 
     [Fact]
+    public void L_anagrafica_salva_chi_non_ha_niente_in_prestito_e_tiene_i_nomi_separati()
+    {
+        var file = Path.Combine(Path.GetTempPath(), $"alexandreia-utenti-{Guid.NewGuid():N}.xlsx");
+        try
+        {
+            Con(db =>
+            {
+                db.SaveBook(new Book { Title = "Elementi", Author = "Euclide" });
+                var mario = db.SaveMember(new Member { LastName = "Rossi", FirstName = "Mario", Notes = "3B" });
+                db.SaveMember(new Member { LastName = "Verdi", FirstName = "Luca" }); // mai un prestito
+                db.Lend(db.Books().Single().Id, mario, DateTime.Today.AddDays(20));
+
+                Assert.Equal(2, Export.Write(db, file).Members);
+            });
+
+            Con(altro =>
+            {
+                var fogli = Import.ReadWorkbook(file);
+                var archivio = Import.Plan(fogli[0].Rows);
+                var anagrafica = Import.Plan(fogli[2].Rows);
+
+                altro.ApplyAll(archivio.Rows, [], anagrafica.Members, replace: true);
+
+                // «Verdi Luca» non aveva prestiti: senza il foglio Utenti sarebbe sparito.
+                Assert.Equal(["Rossi", "Verdi"], altro.Members().Select(m => m.LastName));
+
+                // E i nomi restano divisi, invece di finire tutti nel cognome.
+                var mario = altro.Members().Single(m => m.LastName == "Rossi");
+                Assert.Equal("Mario", mario.FirstName);
+                Assert.Equal("3B", mario.Notes);
+                Assert.Equal(1, mario.OpenLoans);
+            });
+        }
+        finally
+        {
+            File.Delete(file);
+        }
+    }
+
+    [Fact]
+    public void L_anagrafica_non_duplica_chi_c_e_gia()
+    {
+        Con(db =>
+        {
+            db.SaveMember(new Member { LastName = "Rossi", FirstName = "Mario" });
+
+            var anagrafica = Import.Plan([
+                R("Cognome", "Nome", "Nota della persona"),
+                R("Rossi", "Mario", "già presente"),
+                R("Bianchi", "Anna", null),
+            ]);
+            Assert.True(anagrafica.IsMembers);
+
+            var c = db.ApplyAll([], [], anagrafica.Members);
+
+            Assert.Equal(1, c.Members); // solo Bianchi
+            Assert.Equal(["Bianchi", "Rossi"], db.Members().Select(m => m.LastName));
+        });
+    }
+
+    [Fact]
+    public void Nella_tendina_del_prestito_gli_omonimi_si_distinguono_dalla_nota()
+    {
+        var senza = new Member { LastName = "Rossi", FirstName = "Mario" };
+        var con = new Member { LastName = "Rossi", FirstName = "Mario", Notes = "classe 3B" };
+
+        Assert.Equal("Rossi Mario", senza.Label);
+        Assert.Equal("Rossi Mario — classe 3B", con.Label);
+    }
+
+    [Fact]
     public void Lo_storico_di_un_libro_che_non_c_e_viene_saltato_e_contato()
     {
         Con(db =>
@@ -314,7 +388,7 @@ public class ImportTests
                 R("Fantasma", "Nessuno", "Ipazia", "01/01/2026", "10/01/2026"),
             ]);
 
-            var c = db.ApplyAll([], storico.Rows);
+            var c = db.ApplyAll([], storico.Rows, []);
 
             Assert.Equal(0, c.History);
             Assert.Equal(1, c.HistorySkipped);
@@ -334,7 +408,7 @@ public class ImportTests
                 R("Elementi", "Euclide", "Eratostene", "01/02/2026", "10/02/2026"),
             ]);
 
-            var c = db.ApplyAll(archivio.Rows, storico.Rows);
+            var c = db.ApplyAll(archivio.Rows, storico.Rows, []);
 
             Assert.Equal(1, c.Books);       // un libro solo, non tre
             Assert.Equal(2, c.History);

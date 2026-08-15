@@ -82,6 +82,8 @@ public partial class SheetMapping : UserControl
         _loading = false;
 
         Riassunto.Text = Report.Empty ? "niente da caricare"
+            : Report.IsMembers
+                ? $"anagrafica: {Report.DataRows} righe → {Report.Members.Count} persone"
             : Report.IsHistory
                 ? $"storico: {Report.DataRows} righe → {ChiusiNelloStorico} prestiti già rientrati"
                 : $"{Report.DataRows} righe → {Report.Books.Count} libri"
