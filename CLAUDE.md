@@ -239,5 +239,7 @@ asset nativi.
 
 ## Rilascio
 
-CI su ogni push a `main`/`develop` e su ogni PR. La release parte **solo da un tag `v*`**, mai da un
-merge. Un solo runner Ubuntu cross-compila per le tre piattaforme.
+Una pipeline sola (`.github/workflows/ci.yml`): i test su ogni push a `main` e su ogni PR, la
+release **solo su un tag `v*`** e **solo dopo** i test, legata con `needs`. Il vincolo sta nel
+grafo dei lavori, non in un comando dentro lo script: così non può passare una release con i test
+rossi. Compila solo `win-x64`.

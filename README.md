@@ -119,8 +119,9 @@ git tag v1.0.0
 git push origin v1.0.0
 ```
 
-La pipeline gira i test, compila per Windows e allega lo zip alla release su GitHub. Su ogni push e
-ogni PR gira invece la sola CI con i test.
+La pipeline è una sola: i test girano su ogni push a `main` e su ogni PR; quando arriva un tag `v*`
+gira anche la release, che compila per Windows e allega lo zip su GitHub. La release **dipende**
+dai test: se sono rossi non parte.
 
 Per farlo a mano:
 
