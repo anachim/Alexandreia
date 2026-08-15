@@ -17,6 +17,38 @@ dotnet run
 dotnet test tests
 ```
 
+## Import da Excel
+
+Due tempi: prima si guarda cosa c'è nel foglio, poi si scrive. Senza `--apply` non tocca niente.
+
+```
+Alexandreia --import libri.xlsx
+```
+
+Stampa, per ogni colonna, quante celle sono piene, su quale campo la mapperebbe e tre valori
+d'esempio; poi quante righe diventano quanti libri. Se il quadro torna:
+
+```
+Alexandreia --import libri.xlsx --apply
+```
+
+| Opzione | |
+|---|---|
+| `--sheet <nome>` | foglio da leggere (default: il primo) |
+| `--map "Col=Campo"` | forza una colonna su un campo, ripetibile |
+| `--no-merge` | tieni ogni riga come titolo a sé |
+| `--apply` | scrivi davvero |
+| `--force` | importa anche se in archivio ci sono già dei libri |
+
+Campi: `Title`, `Author`, `Isbn`, `Year`, `Publisher`, `Location`, `Copies`.
+
+Le intestazioni sono riconosciute per **corrispondenza esatta**, senza euristiche: una colonna
+mappata sul campo sbagliato su 1400 righe non te ne accorgi finché non è tardi. Quello che non
+riconosce lo dice e finisce in `Notes` invece di essere buttato; si corregge con `--map`.
+
+Righe uguali diventano **copie dello stesso libro** — chiave l'ISBN se c'è, altrimenti titolo +
+autore. Il conto è nel report prima di applicare, e `--no-merge` lo disattiva.
+
 ## Rilascio
 
 Il rilascio lo fa un **tag**, non un merge:
@@ -63,11 +95,13 @@ Variabili d'ambiente:
 | File | Cosa fa |
 |---|---|
 | `Db.cs` | schema, query e le regole di prestito |
+| `Import.cs` | lettura del foglio, riconoscimento colonne, unione doppioni |
+| `Cli.cs` | comando `--import` e report |
 | `Program.cs` | avvio, binding su loopback, apertura browser |
 | `Components/Pages/` | Libri, LibroEdit, Prestiti, Metriche |
-| `tests/PrestitiTests.cs` | disponibilità copie, prestito, rientro, metriche |
+| `tests/` | disponibilità copie, prestito, rientro, metriche, import |
 
 ## Non c'è (ancora)
 
-Anagrafica di chi prende in prestito (per ora è un campo testo), autenticazione, import da Excel,
-ricerca full-text. Si aggiungono quando servono davvero.
+Anagrafica di chi prende in prestito (per ora è un campo testo), autenticazione, ricerca full-text,
+firma degli eseguibili. Si aggiungono quando servono davvero.

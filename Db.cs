@@ -103,6 +103,11 @@ public class Db
 
     readonly string _cs;
 
+    public static string DefaultPath() =>
+        Environment.GetEnvironmentVariable("ALEXANDREIA_DB")
+        ?? Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+                        "Alexandreia", "alexandreia.db");
+
     public Db(string path)
     {
         Directory.CreateDirectory(Path.GetDirectoryName(Path.GetFullPath(path))!);
@@ -169,6 +174,19 @@ public class Db
             throw new InvalidOperationException(
                 "Ci sono più copie in prestito di quante ne stai dichiarando: registra prima i rientri.");
         return b.Id;
+    }
+
+    /// <summary>Inserimento massivo (import). Una sola transazione: 1400 commit separati sono lentissimi.</summary>
+    public int InsertBooks(IEnumerable<Book> books)
+    {
+        using var c = Open();
+        using var tx = c.BeginTransaction();
+        var n = c.Execute("""
+            INSERT INTO Books (Title, Author, Isbn, Publisher, Year, Copies, Location, Notes)
+            VALUES (@Title, @Author, @Isbn, @Publisher, @Year, @Copies, @Location, @Notes)
+            """, books, tx);
+        tx.Commit();
+        return n;
     }
 
     /// <summary>Archivia il libro. Rifiuta se ci sono prestiti aperti. La storia dei prestiti resta.</summary>

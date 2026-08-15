@@ -2,14 +2,16 @@ using System.Diagnostics;
 using Alexandreia;
 using Alexandreia.Components;
 
+// Import da Excel: comando a sé, non avvia l'applicativo.
+if (args.Contains("--import")) return Cli.RunImport(args);
+if (args.Contains("--help") || args.Contains("-h")) { Console.WriteLine(Cli.Usage); return 0; }
+
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
 
-var dbPath = Environment.GetEnvironmentVariable("ALEXANDREIA_DB")
-    ?? Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-                    "Alexandreia", "alexandreia.db");
+var dbPath = Db.DefaultPath();
 builder.Services.AddSingleton(new Db(dbPath));
 
 // Solo loopback: l'applicativo non è raggiungibile dalla rete. Porta 0 = la sceglie il sistema,
@@ -38,3 +40,4 @@ app.Lifetime.ApplicationStarted.Register(() =>
 });
 
 app.Run();
+return 0;
