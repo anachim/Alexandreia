@@ -45,8 +45,12 @@ Tutto dalla scheda **Dati**, in un unico formato Excel:
 | Rientro entro | opzionale, altrimenti 30 giorni |
 
 **Esporta** salva l'archivio in questo formato: serve sia da copia di sicurezza sia per spostare i
-dati su un altro computer. Non porta con sé lo storico dei prestiti già rientrati (quindi le
-metriche ripartono da zero) né le persone che al momento non hanno niente fuori.
+dati su un altro computer.
+
+Porta con sé la fotografia di adesso — i libri e chi ce li ha in questo momento — non lo storico
+dei prestiti già rientrati, né le persone che al momento non hanno niente fuori. **È voluto**: le
+statistiche degli anni passati la biblioteca le tiene per conto suo, e le metriche di Alexandreia
+partono da quando entra in servizio. Non è una mancanza da colmare.
 
 **Carica** legge lo stesso formato — e anche l'Excel che avevano già loro. Mostra, colonna per
 colonna, quante celle sono piene, su quale campo la mapperebbe e tre valori d'esempio. **Niente
@@ -107,5 +111,4 @@ Un unico file, in `%LOCALAPPDATA%\Alexandreia\alexandreia.db`. `ALEXANDREIA_DB` 
 
 ## Non c'è (ancora)
 
-Autenticazione, ricerca full-text, firma dell'eseguibile, storico dei prestiti nell'export.
-Si aggiungono quando servono davvero.
+Autenticazione, ricerca full-text, firma dell'eseguibile. Si aggiungono quando servono davvero.

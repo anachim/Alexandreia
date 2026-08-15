@@ -74,8 +74,11 @@ Vanno rispettate: sembrano scorciatoie, sono richieste esplicite.
 - **Nessuna deduplica, mai.** Non reintrodurre chiavi su ISBN o titolo + autore.
 - **L'import scarta** le colonne non riconosciute: non accodarle alla nota.
 - **Il backup è un file Excel leggibile, senza Id.** So che non è quello che si farebbe
-  normalmente; è stato chiesto e riconfermato. Perde lo storico dei prestiti chiusi e le persone
-  senza niente fuori: è il prezzo del formato, ed è noto.
+  normalmente; è stato chiesto e riconfermato.
+- **L'export porta la fotografia di adesso, non lo storico.** I prestiti già rientrati e le
+  persone senza niente fuori restano indietro, e va bene così: le statistiche del passato le
+  tiene la biblioteca per conto suo, le metriche partono da quando l'applicazione entra in
+  servizio. Deciso esplicitamente — non è un buco da tappare.
 - Gira su **Windows 11**. La release compila solo `win-x64`; il codice resta portabile.
 
 ## Import Excel
