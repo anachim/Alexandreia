@@ -55,7 +55,7 @@ public partial class ImportView : UserControl, IReloadable
         try
         {
             var n = Export.Write(_db, path);
-            ExportResult.Text = $"Esportati {n.Books} libri, {n.Members} utenti e {n.Loans} prestiti " +
+            ExportResult.Text = $"Salvati {n.Books} libri, {n.Members} utenti e {n.Loans} prestiti " +
                                 $"in {System.IO.Path.GetFileName(path)}.";
         }
         catch (Exception ex)

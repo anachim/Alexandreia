@@ -138,8 +138,12 @@ cartellini, e il timbro viola della data di restituzione, da cui viene l'accento
 scelta presa per non finire nel crema + terracotta che è la risposta prevedibile per
 «biblioteca» (e dove ero finito alla prima passata).
 
-Il colore è informazione, non decorazione: viola = azione principale (`Button.primary`),
-vermiglio = ritardo o cancellazione (`Button.danger`, `Border.warning`, `Border.stamp`).
+Il colore è informazione, non decorazione. Il **pieno viola** (`Button.primary`) è riservato ai
+bottoni che **cambiano l'archivio**: nuovo libro, nuovo utente, conferma prestito, salva, importa.
+Scegliere un file o esportarlo non lo cambiano, e infatti sono riquadri neutri (`Button.drop`) —
+mettere il pieno anche lì rendeva la scheda Dati sbilanciata, con una metà che urlava e l'altra
+che sussurrava. Il **vermiglio** è per il ritardo e per ciò che cancella (`Button.danger`,
+`Border.warning`, `Border.pill.late`).
 
 Lo stato di un prestito si dice **a parole** (`Loan.Stato` + `Border.pill`), non con un simbolo.
 C'era un timbro grafico al suo posto: era una bella idea che nessuno capiva, ed è il motivo per

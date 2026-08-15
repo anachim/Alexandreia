@@ -8,14 +8,17 @@
 
         <TextBlock DockPanel.Dock="Top" Text="PORTA I DATI FUORI" Classes="h" Margin="0,0,0,10" />
 
-        <Border DockPanel.Dock="Top" Classes="card" Margin="0,0,0,4">
-            <DockPanel LastChildFill="True">
-                <Button Name="DoExport" Classes="primary" Content="Esporta in Excel"
-                        DockPanel.Dock="Left" Margin="0,0,14,0" />
-                <TextBlock Name="ExportResult" VerticalAlignment="Center" Classes="muted" TextWrapping="Wrap"
-                           Text="Tre fogli: i libri con chi ce li ha adesso, lo storico dei prestiti e l'anagrafica. È lo stesso formato che questa scheda sa rileggere: serve da copia di sicurezza e per spostare l'archivio su un altro computer." />
-            </DockPanel>
-        </Border>
+        <!-- Le due direzioni sono due riquadri uguali: si guardano di fianco, e uno più
+             squillante dell'altro farebbe pensare che conti di più. Il pieno resta al
+             solo bottone che cambia l'archivio. -->
+        <Button Name="DoExport" DockPanel.Dock="Top" Classes="drop" Margin="0,0,0,10">
+            <StackPanel Spacing="4">
+                <TextBlock Text="Salva l'archivio in un file Excel" FontWeight="SemiBold"
+                           HorizontalAlignment="Center" />
+                <TextBlock Name="ExportResult" Classes="muted" HorizontalAlignment="Center"
+                           Text="Libri, prestiti e utenti, per la copia di sicurezza o per portarli su un altro computer." />
+            </StackPanel>
+        </Button>
 
         <TextBlock DockPanel.Dock="Top" Text="PORTA I DATI DENTRO" Classes="h" />
 
