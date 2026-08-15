@@ -187,38 +187,102 @@ public class UiTests : IDisposable
     // --- Import ---------------------------------------------------------
 
     static string Fixture => Path.Combine(AppContext.BaseDirectory, "fixtures", "catalogo.xlsx");
+    static string MultiFixture => Path.Combine(AppContext.BaseDirectory, "fixtures", "multifoglio.xlsx");
+
+    static ImportView Import(MainWindow w, string fixture)
+    {
+        var view = w.GetVisualDescendants().OfType<ImportView>().First();
+        view.Load(fixture);
+        Settle();
+        return view;
+    }
 
     [AvaloniaFact]
     public void L_import_legge_il_file_e_mostra_cosa_ha_capito()
     {
         var w = Open();
         Tab(w, 3);
+        Import(w, Fixture);
 
-        var view = w.GetVisualDescendants().OfType<ImportView>().First();
-        view.Load(Fixture);
-        Settle();
+        var foglio = Assert.Single(w.GetVisualDescendants().OfType<SheetMapping>());
+        var scelte = Named<DataGrid>(foglio, "Grid").ItemsSource!.Cast<ColumnChoice>().ToList();
 
-        var scelte = Named<DataGrid>(w, "Grid").ItemsSource.Cast<ColumnChoice>().ToList();
         Assert.Equal("Title", scelte.Single(c => c.Header == "Titolo").Field);
+        Assert.Equal("Isbn", scelte.Single(c => c.Header == "ISBN").Field);
         Assert.Equal(ColumnChoice.None, scelte.Single(c => c.Header == "Stato conservazione").Field);
-        Assert.Contains("2 libri", Named<TextBlock>(w, "Summary").Text!);
+        Assert.Contains("3 libri", Named<TextBlock>(w, "Summary").Text!);
     }
 
     [AvaloniaFact]
-    public void L_import_scrive_i_libri()
+    public void Con_un_foglio_solo_niente_intestazioni_di_foglio()
+    {
+        var w = Open();
+        Tab(w, 3);
+        Import(w, Fixture);
+
+        var foglio = Assert.Single(w.GetVisualDescendants().OfType<SheetMapping>());
+        Assert.False(Named<TextBlock>(w, "Found").IsVisible);
+        Assert.False(Named<DockPanel>(foglio, "Head").IsVisible);
+    }
+
+    [AvaloniaFact]
+    public void Il_riepilogo_non_resta_tagliato_quando_si_allunga()
+    {
+        var w = Open();
+        Tab(w, 3);
+
+        Import(w, Fixture);      // riepilogo corto
+        Import(w, MultiFixture); // riepilogo più lungo
+        w.UpdateLayout();
+
+        // Uno StackPanel orizzontale lo lasciava disposto con la larghezza del testo precedente:
+        // misurato giusto, tagliato a video.
+        var s = Named<TextBlock>(w, "Summary");
+        Assert.True(s.Bounds.Width >= s.DesiredSize.Width,
+            $"tagliato: disposto {s.Bounds.Width:0}, ne servono {s.DesiredSize.Width:0} per «{s.Text}»");
+    }
+
+    [AvaloniaFact]
+    public void Con_piu_fogli_ognuno_ha_la_sua_mappatura()
+    {
+        var w = Open();
+        Tab(w, 3);
+        Import(w, MultiFixture);
+
+        var fogli = w.GetVisualDescendants().OfType<SheetMapping>().ToList();
+        Assert.Equal(["Appunti", "Catalogo"], fogli.Select(f => f.Sheet.Name));
+        Assert.True(Named<TextBlock>(w, "Found").IsVisible);
+
+        // Da «Appunti» non si ricava niente, e va detto invece che sparire in silenzio.
+        Assert.True(fogli[0].Report.Empty);
+        Assert.False(fogli[0].Included);
+        Assert.Contains("non riesco a ricavare niente", Named<TextBlock>(fogli[0], "Problema").Text!);
+
+        // «Catalogo» invece sì, ed è quello che entra nel totale.
+        Assert.True(fogli[1].Included);
+        Assert.Contains("2 libri", Named<TextBlock>(w, "Summary").Text!);
+
+        // Il punto della mappatura per foglio: qui il titolo si chiama «Libro» e non «Titolo»,
+        // e chi ha scritto il libro ha un'intestazione che nessuna lista indovinerà mai.
+        var scelte = Named<DataGrid>(fogli[1], "Grid").ItemsSource!.Cast<ColumnChoice>().ToList();
+        Assert.Equal("Title", scelte.Single(c => c.Header == "Libro").Field);
+        Assert.Equal(ColumnChoice.None, scelte.Single(c => c.Header == "Chi lo ha scritto").Field);
+    }
+
+    [AvaloniaFact]
+    public void L_import_scrive_i_libri_come_li_trova()
     {
         _db.ArchiveBook(_libro); // parto da archivio vuoto, così non chiede conferma
 
         var w = Open();
         Tab(w, 3);
-
-        var view = w.GetVisualDescendants().OfType<ImportView>().First();
-        view.Load(Fixture);
-        Settle();
+        Import(w, Fixture);
 
         Click(Named<Button>(w, "Apply"));
 
-        Assert.Equal(["Almagesto", "Elementi"], _db.Books().Select(b => b.Title));
-        Assert.Equal(2, _db.Books().Single(b => b.Title == "Elementi").Copies);
+        // «Elementi» e «Gli Elementi» hanno lo stesso ISBN, ma non deduplichiamo:
+        // ripulire i doppioni sta a chi possiede i dati.
+        Assert.Equal(["Almagesto", "Elementi", "Gli Elementi"], _db.Books().Select(b => b.Title));
+        Assert.All(_db.Books(), b => Assert.Equal(1, b.Copies));
     }
 }

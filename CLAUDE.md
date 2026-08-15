@@ -56,9 +56,28 @@ copia esce due volte, e servirebbero transazioni che così non servono. Stesso s
 I libri si **archiviano** (`Books.Archived = 1`), non si cancellano: eliminare il record porterebbe
 via lo storico prestiti, cioè le metriche.
 
+## Import Excel
+
+`Import.cs` è diviso in due apposta: `ReadWorkbook(path)` è l'unica parte che tocca il disco,
+`Plan(rows, ...)` è pura e lavora su matrici di celle. Quindi **i test dell'import non usano
+nessun `.xlsx`**: passano array di `object?`. Logica nuova va in `Plan`.
+
+Le intestazioni sono riconosciute per **corrispondenza esatta** contro `Synonyms`, deliberatamente
+senza euristiche di tipo "contiene" o "inizia per": una colonna mappata sul campo sbagliato su 1400
+righe non si nota. Ciò che non riconosce finisce in `Notes` e si corregge dalla tendina nella
+tabella. Non trasformarlo in fuzzy matching: un typo tipo «Titollo» non va indovinato, va chiesto.
+
+`ReadWorkbook` legge **tutti** i fogli, e ogni foglio è un `SheetMapping` con la **sua** mappatura,
+perché lo stesso campo cambia nome da un foglio all'altro. Un foglio da cui non esce niente
+(`ImportReport.Empty`) resta escluso e lo dichiara, invece di sparire in silenzio.
+
+**Nessuna deduplica, mai.** Una riga con un titolo è una scheda. Le copie arrivano solo da una
+colonna «Copie» esplicita. È una decisione del committente, non una svista: ripulire i doppioni
+sta a chi possiede i dati. Non reintrodurre chiavi di raggruppamento su ISBN o titolo + autore.
+
 ## Trappole di Avalonia
 
-Ognuna di queste è costata un bug vero, due dei quali invisibili finché non ho renderizzato la
+Ognuna di queste è costata un bug vero, tre dei quali invisibili finché non ho renderizzato la
 finestra su immagine.
 
 - **`DataGridTextColumn` lega in TwoWay anche con `IsReadOnly="True"`** e **riscrive nel modello**:
@@ -74,6 +93,12 @@ finestra su immagine.
 - Avalonia 12 ha sostituito `IDataObject` con `IDataTransfer`: il drag&drop usa
   `e.DataTransfer.TryGetFile()`, non `e.Data.GetFiles()`.
 - `TextBox.Watermark` è deprecato, si chiama `PlaceholderText`.
+- **Uno `StackPanel` orizzontale dimensiona i figli sul contenuto**, e un `TextBlock` il cui testo
+  cambia resta **disposto con l'ingombro di prima**: misurato giusto (`DesiredSize` aggiornato),
+  tagliato a video (`Bounds.Width` vecchio), e nemmeno `UpdateLayout()` lo sistema. Un testo che
+  cambia va in un contenitore che si allarga — vedi `Actions` in `ImportView` e `Head` in
+  `SheetMapping`, entrambi `DockPanel`. Il test `Il_riepilogo_non_resta_tagliato_quando_si_allunga`
+  confronta `Bounds.Width` con `DesiredSize.Width`.
 
 ## Test
 

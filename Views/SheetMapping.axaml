@@ -1,0 +1,36 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:m="using:Alexandreia"
+             x:Class="Alexandreia.SheetMapping">
+
+    <StackPanel Spacing="4" Margin="0,0,0,16">
+
+        <!-- Vedi ImportView: il riassunto cambia, quindi deve stare in un contenitore
+             che si allarga, non in uno StackPanel che lo dimensiona sul testo vecchio. -->
+        <DockPanel Name="Head" LastChildFill="True">
+            <CheckBox Name="Includi" DockPanel.Dock="Left" VerticalAlignment="Center" />
+            <TextBlock Name="Nome" DockPanel.Dock="Left" FontWeight="SemiBold"
+                       VerticalAlignment="Center" Margin="0,0,10,0" />
+            <TextBlock Name="Riassunto" Classes="muted" VerticalAlignment="Center" />
+        </DockPanel>
+
+        <TextBlock Name="Problema" Classes="overdue" TextWrapping="Wrap" IsVisible="False" />
+
+        <DataGrid Name="Grid" AutoGenerateColumns="False" IsReadOnly="True" MaxHeight="300"
+                  x:DataType="m:ColumnChoice" GridLinesVisibility="Horizontal">
+            <DataGrid.Columns>
+                <DataGridTextColumn Header="Colonna del foglio" Binding="{Binding Header, Mode=OneWay}" Width="220" />
+                <DataGridTextColumn Header="Celle piene" Binding="{Binding Filled, Mode=OneWay}" Width="110" />
+                <DataGridTemplateColumn Header="Va nel campo" Width="160">
+                    <DataGridTemplateColumn.CellTemplate>
+                        <DataTemplate x:DataType="m:ColumnChoice">
+                            <ComboBox ItemsSource="{Binding Options}" SelectedItem="{Binding Field, Mode=TwoWay}"
+                                      SelectionChanged="OnFieldChanged" Margin="4,2" MinWidth="140" />
+                        </DataTemplate>
+                    </DataGridTemplateColumn.CellTemplate>
+                </DataGridTemplateColumn>
+                <DataGridTextColumn Header="Esempi dal foglio" Binding="{Binding Samples, Mode=OneWay}" Width="*" />
+            </DataGrid.Columns>
+        </DataGrid>
+    </StackPanel>
+</UserControl>

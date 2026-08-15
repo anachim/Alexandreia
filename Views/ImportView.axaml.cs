@@ -1,34 +1,17 @@
 using Avalonia.Controls;
 using Avalonia.Input;
-using Avalonia.Interactivity;
 using Avalonia.Platform.Storage;
 
 namespace Alexandreia;
 
 /// <summary>
-/// Import in due tempi, come deve essere: si sceglie il file, si guarda cosa ha capito
-/// e solo dopo si scrive. La mappatura è correggibile a mano riga per riga.
+/// Import in due tempi: si sceglie il file, si guarda foglio per foglio cosa abbiamo capito,
+/// e solo dopo si scrive. La mappatura è correggibile a mano, e ogni foglio ha la sua.
 /// </summary>
-/// <summary>Riga della tabella di mappatura. <c>Field</c> è scrivibile: è la correzione manuale.</summary>
-public class ColumnChoice
-{
-    public const string None = "(niente — finisce nelle note)";
-
-    public required string Header { get; init; }
-    public required int Filled { get; init; }
-    public required string Samples { get; init; }
-    public string Field { get; set; } = None;
-    public IReadOnlyList<string> Options { get; } = [None, .. Import.Fields];
-}
-
 public partial class ImportView : UserControl, IReloadable
 {
-    const string None = ColumnChoice.None;
-
     readonly Db _db = null!;
-    List<object?[]> _rows = [];
-    string _sheet = "";
-    List<ColumnChoice> _choices = [];
+    readonly List<SheetMapping> _sheets = [];
 
     public ImportView() => InitializeComponent();
 
@@ -37,7 +20,6 @@ public partial class ImportView : UserControl, IReloadable
         _db = db;
 
         Pick.Click += async (_, _) => await PickFile();
-        Merge.IsCheckedChanged += (_, _) => Recompute();
         Apply.Click += async (_, _) => await DoImport();
 
         AddHandler(DragDrop.DragOverEvent, OnDragOver);
@@ -45,6 +27,9 @@ public partial class ImportView : UserControl, IReloadable
     }
 
     public void Reload() { }
+
+    /// <summary>I fogli che verranno importati, nell'ordine del file.</summary>
+    public IEnumerable<SheetMapping> Selected => _sheets.Where(s => s.Included);
 
     // --- Scelta del file -------------------------------------------------
 
@@ -76,95 +61,78 @@ public partial class ImportView : UserControl, IReloadable
     public void Load(string path)
     {
         Result.Text = "";
+        Errore.IsVisible = false;
+        Sheets.Children.Clear();
+        _sheets.Clear();
+
+        List<Import.SheetData> fogli;
         try
         {
-            (_sheet, _rows) = Import.ReadSheet(path);
+            fogli = Import.ReadWorkbook(path);
         }
         catch (Exception ex)
         {
-            Fail($"Non riesco a leggere il file: {ex.Message}");
+            FileName.Text = Path.GetFileName(path);
+            Errore.Text = $"Non riesco a leggere il file: {ex.Message}";
+            Errore.IsVisible = true;
+            Found.IsVisible = Actions.IsVisible = false;
             return;
         }
 
-        var plan = Import.Plan(_rows, _sheet, merge: Merge.IsChecked == true);
-        _choices = [.. plan.Columns.Select(c => new ColumnChoice
-        {
-            Header = c.Header,
-            Filled = c.Filled,
-            Samples = string.Join("  |  ", c.Samples),
-            Field = c.MappedTo ?? None,
-        })];
-
         FileName.Text = Path.GetFileName(path);
-        Grid.ItemsSource = _choices;
-        Grid.IsVisible = true;
-        Details.IsVisible = true;
-        Actions.IsVisible = true;
         DropZone.IsVisible = false;
-        Show(plan);
+
+        foreach (var foglio in fogli)
+        {
+            var vista = new SheetMapping(foglio, soloFoglio: fogli.Count == 1);
+            vista.Changed += UpdateTotal;
+            _sheets.Add(vista);
+            Sheets.Children.Add(vista);
+        }
+
+        // Con un foglio solo non c'è niente da annunciare: la schermata resta come prima.
+        Found.IsVisible = fogli.Count > 1;
+        Found.Text = $"Trovati {fogli.Count} fogli in {Path.GetFileName(path)}";
+        Actions.IsVisible = true;
+        UpdateTotal();
     }
 
-    void Fail(string text)
+    void UpdateTotal()
     {
-        Warnings.Text = text;
-        Warnings.IsVisible = true;
-        Grid.IsVisible = Actions.IsVisible = false;
-        Details.IsVisible = true;
-    }
+        Result.Text = "";
 
-    // --- Riepilogo, ricalcolato a ogni correzione ------------------------
+        var scelti = Selected.ToList();
+        var libri = scelti.Sum(s => s.Report.Books.Count);
+        var righe = scelti.Sum(s => s.Report.DataRows);
 
-    void OnFieldChanged(object? sender, SelectionChangedEventArgs e)
-    {
-        if (_rows.Count > 0) Recompute();
-    }
+        Summary.Text = _sheets.Count == 0
+            ? ""
+            : scelti.Count == 0
+                ? "Nessun foglio da importare."
+                : _sheets.Count > 1
+                    ? $"{scelti.Count} {(scelti.Count == 1 ? "foglio" : "fogli")} su {_sheets.Count}: " +
+                      $"{righe} righe → {libri} libri"
+                    : $"{righe} righe → {libri} libri";
 
-    void Recompute()
-    {
-        if (_rows.Count == 0) return;
-        Show(Plan());
-    }
-
-    ImportReport Plan()
-    {
-        // Passo ogni scelta, anche "(niente)" come stringa vuota: altrimenti il
-        // riconoscimento automatico rimetterebbe l'accoppiamento appena tolto a mano.
-        var overrides = _choices
-            .GroupBy(c => c.Header)
-            .ToDictionary(g => g.Key, g => g.First().Field == None ? "" : g.First().Field);
-
-        return Import.Plan(_rows, _sheet, merge: Merge.IsChecked == true, overrides);
-    }
-
-    void Show(ImportReport r)
-    {
-        SheetInfo.Text = $"Foglio «{r.Sheet}» — intestazione alla riga {r.HeaderRow + 1}, {r.DataRows} righe di dati";
-
-        var parts = new List<string> { $"{r.DataRows} righe → {r.Books.Count} libri" };
-        if (r.Merged > 0) parts.Add($"{r.Merged} unite in copie");
-        if (r.SkippedNoTitle > 0) parts.Add($"{r.SkippedNoTitle} saltate senza titolo");
-        Summary.Text = string.Join("   ·   ", parts);
-
-        Warnings.Text = string.Join("\n", r.Warnings);
-        Warnings.IsVisible = r.Warnings.Count > 0;
-        Apply.IsEnabled = r.Books.Count > 0;
+        Apply.IsEnabled = libri > 0;
     }
 
     // --- Scrittura -------------------------------------------------------
 
     async Task DoImport()
     {
-        var report = Plan();
-        if (report.Books.Count == 0) return;
+        // Nessuna deduplica: i libri si caricano come si trovano, foglio dopo foglio.
+        var libri = Selected.SelectMany(s => s.Report.Books).ToList();
+        if (libri.Count == 0) return;
 
         var owner = TopLevel.GetTopLevel(this) as Window;
 
         if (_db.Books(limit: 1).Count > 0 && !await Dialogs.Confirm(owner,
-                "In archivio ci sono già dei libri: questo import si aggiunge a quelli e può creare doppioni.\n\nProcedo lo stesso?",
+                "In archivio ci sono già dei libri: questo import si aggiunge a quelli.\n\nProcedo lo stesso?",
                 "Importa comunque"))
             return;
 
-        var n = _db.InsertBooks(report.Books);
+        var n = _db.InsertBooks(libri);
         Result.Text = $"Importati {n} libri.";
         Apply.IsEnabled = false;
     }

@@ -19,36 +19,22 @@
             </StackPanel>
         </Border>
 
-        <StackPanel Name="Details" DockPanel.Dock="Top" Spacing="6" IsVisible="False">
-            <TextBlock Name="SheetInfo" />
-            <TextBlock Name="Warnings" Classes="overdue" TextWrapping="Wrap" IsVisible="False" />
-        </StackPanel>
+        <TextBlock Name="Found" DockPanel.Dock="Top" Margin="0,0,0,10" IsVisible="False" FontWeight="SemiBold" />
+        <TextBlock Name="Errore" DockPanel.Dock="Top" Classes="overdue" TextWrapping="Wrap"
+                   Margin="0,0,0,10" IsVisible="False" />
 
         <Border Name="Actions" DockPanel.Dock="Bottom" IsVisible="False" Margin="0,10,0,0">
-            <StackPanel Orientation="Horizontal" Spacing="14">
-                <CheckBox Name="Merge" IsChecked="True" VerticalAlignment="Center"
-                          Content="Unisci le righe uguali in copie dello stesso libro" />
+            <!-- DockPanel e non StackPanel: uno StackPanel orizzontale dimensiona i figli sul
+                 contenuto, e un testo che cambia resta disposto con l'ingombro di prima. -->
+            <DockPanel LastChildFill="True">
+                <Button Name="Apply" Content="Importa" DockPanel.Dock="Left" Margin="0,0,14,0" />
+                <TextBlock Name="Result" DockPanel.Dock="Right" VerticalAlignment="Center" Classes="muted" />
                 <TextBlock Name="Summary" VerticalAlignment="Center" FontWeight="SemiBold" />
-                <Button Name="Apply" Content="Importa" />
-                <TextBlock Name="Result" VerticalAlignment="Center" />
-            </StackPanel>
+            </DockPanel>
         </Border>
 
-        <DataGrid Name="Grid" AutoGenerateColumns="False" IsReadOnly="True" IsVisible="False"
-                  x:DataType="m:ColumnChoice" GridLinesVisibility="Horizontal">
-            <DataGrid.Columns>
-                <DataGridTextColumn Header="Colonna del foglio" Binding="{Binding Header, Mode=OneWay}" Width="220" />
-                <DataGridTextColumn Header="Celle piene" Binding="{Binding Filled, Mode=OneWay}" Width="90" />
-                <DataGridTemplateColumn Header="Va nel campo" Width="160">
-                    <DataGridTemplateColumn.CellTemplate>
-                        <DataTemplate x:DataType="m:ColumnChoice">
-                            <ComboBox ItemsSource="{Binding Options}" SelectedItem="{Binding Field, Mode=TwoWay}"
-                                      SelectionChanged="OnFieldChanged" Margin="4,2" MinWidth="140" />
-                        </DataTemplate>
-                    </DataGridTemplateColumn.CellTemplate>
-                </DataGridTemplateColumn>
-                <DataGridTextColumn Header="Esempi dal foglio" Binding="{Binding Samples, Mode=OneWay}" Width="*" />
-            </DataGrid.Columns>
-        </DataGrid>
+        <ScrollViewer>
+            <StackPanel Name="Sheets" />
+        </ScrollViewer>
     </DockPanel>
 </UserControl>

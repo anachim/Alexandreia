@@ -28,8 +28,15 @@ mappata sul campo sbagliato su 1400 righe non te ne accorgi finché non è tardi
 riconosce lo dice e finisce in `Notes` invece di essere buttato — e ogni riga della tabella ha un
 menu a tendina per correggere a mano l'accoppiamento.
 
-Righe uguali diventano **copie dello stesso libro**: chiave l'ISBN se c'è, altrimenti titolo +
-autore. Il conteggio è nel riepilogo prima di applicare, e c'è una casella per disattivarlo.
+Se il file ha **più fogli** li mostra tutti, ognuno con la **sua** mappatura e una casella per
+includerlo o no. Serve perché lo stesso campo può chiamarsi «Titolo» in un foglio e «Libro» in un
+altro, o essere scritto con un errore di battitura — che nessuna lista di sinonimi indovinerà mai,
+e che infatti si corregge a mano. Un foglio da cui non si ricava niente **lo dice** e resta fuori,
+invece di sparire in silenzio.
+
+**Nessuna deduplica**: i libri si caricano come si trovano, una riga una scheda. Le copie arrivano
+solo da una colonna «Copie» esplicita. Se lo stesso libro è su tre righe, in archivio ci finiscono
+tre schede: ripulire i doppioni sta a chi possiede i dati.
 
 ## Rilascio
 
