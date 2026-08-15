@@ -5,8 +5,9 @@ using Avalonia.Platform.Storage;
 namespace Alexandreia;
 
 /// <summary>
-/// Import in due tempi: si sceglie il file, si guarda foglio per foglio cosa abbiamo capito,
-/// e solo dopo si scrive. La mappatura è correggibile a mano, e ogni foglio ha la sua.
+/// Scambio dati: si esporta l'archivio in un Excel, e si ricarica lo stesso formato
+/// (o l'Excel che avevano già loro). L'import lavora in due tempi — si guarda foglio per
+/// foglio cosa abbiamo capito, e solo dopo si scrive.
 /// </summary>
 public partial class ImportView : UserControl, IReloadable
 {
@@ -19,8 +20,10 @@ public partial class ImportView : UserControl, IReloadable
     {
         _db = db;
 
+        DoExport.Click += async (_, _) => await SaveExport();
         Pick.Click += async (_, _) => await PickFile();
         Apply.Click += async (_, _) => await DoImport();
+        Replace.IsCheckedChanged += (_, _) => UpdateTotal();
 
         AddHandler(DragDrop.DragOverEvent, OnDragOver);
         AddHandler(DragDrop.DropEvent, OnDrop);
@@ -28,8 +31,37 @@ public partial class ImportView : UserControl, IReloadable
 
     public void Reload() { }
 
-    /// <summary>I fogli che verranno importati, nell'ordine del file.</summary>
+    /// <summary>I fogli che verranno caricati, nell'ordine del file.</summary>
     public IEnumerable<SheetMapping> Selected => _sheets.Where(s => s.Included);
+
+    bool Replacing => Replace.IsChecked == true;
+
+    // --- Export ----------------------------------------------------------
+
+    async Task SaveExport()
+    {
+        if (TopLevel.GetTopLevel(this) is not { } top) return;
+
+        var file = await top.StorageProvider.SaveFilePickerAsync(new FilePickerSaveOptions
+        {
+            Title = "Salva l'archivio",
+            SuggestedFileName = Export.SuggestedName(DateTime.Today),
+            DefaultExtension = "xlsx",
+            FileTypeChoices = [new FilePickerFileType("Excel") { Patterns = ["*.xlsx"] }],
+        });
+
+        if (file?.TryGetLocalPath() is not { } path) return;
+
+        try
+        {
+            var n = Export.Write(_db, path);
+            ExportResult.Text = $"Esportati {n} libri in {System.IO.Path.GetFileName(path)}.";
+        }
+        catch (Exception ex)
+        {
+            ExportResult.Text = $"Non riesco a scrivere il file: {ex.Message}";
+        }
+    }
 
     // --- Scelta del file -------------------------------------------------
 
@@ -60,7 +92,6 @@ public partial class ImportView : UserControl, IReloadable
 
     public void Load(string path)
     {
-        Result.Text = "";
         Errore.IsVisible = false;
         Sheets.Children.Clear();
         _sheets.Clear();
@@ -72,14 +103,14 @@ public partial class ImportView : UserControl, IReloadable
         }
         catch (Exception ex)
         {
-            FileName.Text = Path.GetFileName(path);
+            FileName.Text = System.IO.Path.GetFileName(path);
             Errore.Text = $"Non riesco a leggere il file: {ex.Message}";
             Errore.IsVisible = true;
             Found.IsVisible = Actions.IsVisible = false;
             return;
         }
 
-        FileName.Text = Path.GetFileName(path);
+        FileName.Text = System.IO.Path.GetFileName(path);
         DropZone.IsVisible = false;
 
         foreach (var foglio in fogli)
@@ -90,29 +121,31 @@ public partial class ImportView : UserControl, IReloadable
             Sheets.Children.Add(vista);
         }
 
-        // Con un foglio solo non c'è niente da annunciare: la schermata resta come prima.
+        // Con un foglio solo non c'è niente da annunciare: la schermata resta semplice.
         Found.IsVisible = fogli.Count > 1;
-        Found.Text = $"Trovati {fogli.Count} fogli in {Path.GetFileName(path)}";
+        Found.Text = $"Trovati {fogli.Count} fogli in {System.IO.Path.GetFileName(path)}";
         Actions.IsVisible = true;
         UpdateTotal();
     }
 
     void UpdateTotal()
     {
-        Result.Text = "";
-
         var scelti = Selected.ToList();
-        var libri = scelti.Sum(s => s.Report.Books.Count);
+        var libri = scelti.Sum(s => s.Report.Rows.Count);
+        var prestiti = scelti.Sum(s => s.Report.Loans);
         var righe = scelti.Sum(s => s.Report.DataRows);
 
-        Summary.Text = _sheets.Count == 0
-            ? ""
-            : scelti.Count == 0
-                ? "Nessun foglio da importare."
-                : _sheets.Count > 1
-                    ? $"{scelti.Count} {(scelti.Count == 1 ? "foglio" : "fogli")} su {_sheets.Count}: " +
-                      $"{righe} righe → {libri} libri"
-                    : $"{righe} righe → {libri} libri";
+        Apply.Content = Replacing ? "Sostituisci" : "Importa";
+
+        var parti = new List<string>();
+        if (_sheets.Count > 1)
+            parti.Add($"{scelti.Count} {(scelti.Count == 1 ? "foglio" : "fogli")} su {_sheets.Count}");
+        parti.Add($"{righe} righe → {libri} libri");
+        if (prestiti > 0) parti.Add($"{prestiti} già in prestito");
+
+        Summary.Text = _sheets.Count == 0 ? ""
+            : scelti.Count == 0 ? "Nessun foglio da caricare."
+            : string.Join("   ·   ", parti);
 
         Apply.IsEnabled = libri > 0;
     }
@@ -121,19 +154,40 @@ public partial class ImportView : UserControl, IReloadable
 
     async Task DoImport()
     {
-        // Nessuna deduplica: i libri si caricano come si trovano, foglio dopo foglio.
-        var libri = Selected.SelectMany(s => s.Report.Books).ToList();
-        if (libri.Count == 0) return;
+        var righe = Selected.SelectMany(s => s.Report.Rows).ToList();
+        if (righe.Count == 0) return;
 
         var owner = TopLevel.GetTopLevel(this) as Window;
+        var quanti = _db.Books(limit: 1).Count > 0 || _db.Members(limit: 1).Count > 0;
 
-        if (_db.Books(limit: 1).Count > 0 && !await Dialogs.Confirm(owner,
-                "In archivio ci sono già dei libri: questo import si aggiunge a quelli.\n\nProcedo lo stesso?",
-                "Importa comunque"))
+        if (Replacing)
+        {
+            // La sola operazione irreversibile del programma: va chiesta per nome.
+            if (!await Dialogs.Confirm(owner,
+                    $"Sto per cancellare tutto l'archivio — libri, utenti e storico dei prestiti — " +
+                    $"e rimetterci dentro le {righe.Count} righe di questo file.\n\n" +
+                    "Non si torna indietro. Procedo?",
+                    "Sostituisci tutto"))
+                return;
+        }
+        else if (quanti && !await Dialogs.Confirm(owner,
+                     "In archivio ci sono già dei dati: queste righe si aggiungono a quelli.\n\nProcedo?",
+                     "Aggiungi"))
+        {
             return;
+        }
 
-        var n = _db.InsertBooks(libri);
-        Result.Text = $"Importati {n} libri.";
-        Apply.IsEnabled = false;
+        try
+        {
+            var n = _db.Apply(righe, Replacing);
+            var prestiti = righe.Count(r => r.HasLoan);
+            Summary.Text = $"Caricati {n} libri" + (prestiti > 0 ? $", di cui {prestiti} già in prestito." : ".");
+            Apply.IsEnabled = false;
+        }
+        catch (Exception ex)
+        {
+            Errore.Text = $"Non sono riuscito a scrivere: {ex.Message}";
+            Errore.IsVisible = true;
+        }
     }
 }

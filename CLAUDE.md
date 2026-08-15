@@ -43,18 +43,40 @@ Un test con dati non prende questo bug: serve il caso a risultato **vuoto** (ved
 `Db.Lend` e `Db.Return` sono ognuna **una singola istruzione**, non un controllo seguito da una
 scrittura:
 
-- `Lend` è `INSERT ... SELECT ... WHERE copie > prestiti_aperti` e ritorna `false` se 0 righe
+- `Lend` è `INSERT ... SELECT ... WHERE NOT EXISTS (prestito aperto)` e ritorna `false` se 0 righe
 - `Return` è `UPDATE ... WHERE ReturnedAt IS NULL` e ritorna `false` se era già chiuso
 
-Non spezzarle in leggi-poi-scrivi "per leggibilità": si riaprirebbe la finestra in cui l'ultima
-copia esce due volte, e servirebbero transazioni che così non servono. Stesso schema in `SaveBook`
-(rifiuta di scendere sotto le copie già fuori) e `ArchiveBook`.
+Non spezzarle in leggi-poi-scrivi "per leggibilità": si riaprirebbe la finestra in cui lo stesso
+libro esce due volte, e servirebbero transazioni che così non servono. Stesso schema in
+`ArchiveBook` e `ArchiveMember`.
 
-`Book.Available` **non è una colonna**: è calcolata nella query (`AvailableExpr`). `IsAvailable`,
-`IsOpen`, `Overdue` e `DueLabel` sono proprietà calcolate che esistono per il binding XAML.
+`Book.IsAvailable` e `LentTo` **non sono colonne**: sono calcolate nella query (`AvailableExpr`,
+`LentToExpr`). Come `IsOpen`, `Overdue`, `DueLabel` e `FullName`, esistono per il binding XAML.
 
-I libri si **archiviano** (`Books.Archived = 1`), non si cancellano: eliminare il record porterebbe
+Libri e utenti si **archiviano** (`Archived = 1`), non si cancellano: eliminare il record porterebbe
 via lo storico prestiti, cioè le metriche.
+
+`Db.Apply(rows, replace)` è l'unico punto che scrive un import: crea l'utente se il nome non c'è
+già (confronto su `NameKey`, cioè minuscolo e spazi normalizzati) e apre il prestito. Il nome
+intero finisce nel **cognome**: «Rossi Mario» e «Mario Rossi» sono indistinguibili, e sbagliare a
+spezzarli è peggio che non spezzarli.
+
+Lo schema ha un `PRAGMA user_version` confrontato con `Db.SchemaVersion`: un archivio più vecchio
+fa fallire il costruttore con un messaggio chiaro invece di rompersi query per query. Alzarlo
+quando lo schema cambia in modo incompatibile.
+
+## Decisioni del committente, non sviste
+
+Vanno rispettate: sembrano scorciatoie, sono richieste esplicite.
+
+- **Un libro ha solo titolo, autore e nota.** Niente ISBN, anno, editore, collocazione, copie.
+- **Un libro è una copia fisica**: o è libero o è fuori. Tre copie = tre schede.
+- **Nessuna deduplica, mai.** Non reintrodurre chiavi su ISBN o titolo + autore.
+- **L'import scarta** le colonne non riconosciute: non accodarle alla nota.
+- **Il backup è un file Excel leggibile, senza Id.** So che non è quello che si farebbe
+  normalmente; è stato chiesto e riconfermato. Perde lo storico dei prestiti chiusi e le persone
+  senza niente fuori: è il prezzo del formato, ed è noto.
+- Gira su **Windows 11**. La release compila solo `win-x64`; il codice resta portabile.
 
 ## Import Excel
 
@@ -71,9 +93,15 @@ tabella. Non trasformarlo in fuzzy matching: un typo tipo «Titollo» non va ind
 perché lo stesso campo cambia nome da un foglio all'altro. Un foglio da cui non esce niente
 (`ImportReport.Empty`) resta escluso e lo dichiara, invece di sparire in silenzio.
 
-**Nessuna deduplica, mai.** Una riga con un titolo è una scheda. Le copie arrivano solo da una
-colonna «Copie» esplicita. È una decisione del committente, non una svista: ripulire i doppioni
-sta a chi possiede i dati. Non reintrodurre chiavi di raggruppamento su ISBN o titolo + autore.
+I nomi dei campi (`Import.FTitle` e compagnia) sono **le etichette italiane** che l'utente vede
+nella tendina, non identificatori interni: cambiarli cambia la UI e va fatto lì.
+
+`Export.Write` scrive **lo stesso formato** che `Plan` sa leggere: il giro completo
+export → import è coperto da `L_export_rilegge_quello_che_ha_scritto`. Se aggiungi un campo,
+va in `Synonyms`, in `Export.Headers` e in `Db.ExportRow`, altrimenti il giro si rompe a metà.
+
+ClosedXML scrive, ExcelDataReader legge. Due librerie Excel di proposito: ClosedXML garantisce
+file che Excel apre davvero, ExcelDataReader è l'unico dei due che regge i vecchi `.xls`.
 
 ## Trappole di Avalonia
 

@@ -17,6 +17,7 @@ public partial class LibriView : UserControl, IReloadable
     {
         _db = db;
         Grid.ItemsSource = _books;
+        Person.DisplayMemberBinding = new Avalonia.Data.Binding(nameof(Member.FullName));
 
         Search.TextChanged += (_, _) => Reload();
         OnlyAvailable.IsCheckedChanged += (_, _) => Reload();
@@ -33,7 +34,7 @@ public partial class LibriView : UserControl, IReloadable
 
         Empty.IsVisible = _books.Count == 0;
         Empty.Text = string.IsNullOrWhiteSpace(Search.Text)
-            ? "Nessun libro ancora. Comincia da «Nuovo libro», oppure carica un Excel dalla scheda Import."
+            ? "Nessun libro ancora. Comincia da «Nuovo libro», oppure carica un Excel dalla scheda Dati."
             : "Nessun libro trovato.";
     }
 
@@ -50,13 +51,20 @@ public partial class LibriView : UserControl, IReloadable
 
     void OnLend(object? sender, RoutedEventArgs e)
     {
+        var utenti = _db.Members();
+        if (utenti.Count == 0)
+        {
+            Say("Non c'è ancora nessun utente: aggiungilo dalla scheda Utenti.", false);
+            return;
+        }
+
         _lending = Row(sender);
         LendTitle.Text = $"Presta «{_lending.Title}»";
-        Borrower.Text = "";
-        DueAt.SelectedDate = DateTime.Today.AddDays(30);
+        Person.ItemsSource = utenti;
+        Person.SelectedItem = null;
+        DueAt.SelectedDate = DateTime.Today.AddDays(Import.DefaultLoanDays);
         LendPanel.IsVisible = true;
         Message.IsVisible = false;
-        Borrower.Focus();
     }
 
     void CloseLendPanel()
@@ -69,18 +77,21 @@ public partial class LibriView : UserControl, IReloadable
     {
         if (_lending is null) return;
 
-        var chi = Borrower.Text?.Trim() ?? "";
-        if (chi.Length == 0) { Say("Scrivi a chi lo stai prestando.", false); return; }
-
-        var entro = DueAt.SelectedDate?.Date ?? DateTime.Today.AddDays(30);
-        if (_db.Lend(_lending.Id, chi, entro))
+        if (Person.SelectedItem is not Member chi)
         {
-            Say($"«{_lending.Title}» prestato a {chi}, rientro entro {entro:dd/MM/yyyy}.", true);
+            Say("Scegli a chi lo stai prestando.", false);
+            return;
+        }
+
+        var entro = DueAt.SelectedDate?.Date ?? DateTime.Today.AddDays(Import.DefaultLoanDays);
+        if (_db.Lend(_lending.Id, chi.Id, entro))
+        {
+            Say($"«{_lending.Title}» prestato a {chi.FullName}, rientro entro {entro:dd/MM/yyyy}.", true);
             CloseLendPanel();
         }
         else
         {
-            Say("Nessuna copia disponibile: qualcuno l'ha già presa.", false);
+            Say("Quel libro risulta già fuori: qualcuno l'ha preso prima.", false);
         }
         Reload();
     }
@@ -95,15 +106,8 @@ public partial class LibriView : UserControl, IReloadable
 
         if (await new LibroDialog(book).ShowDialog<bool>(owner))
         {
-            try
-            {
-                _db.SaveBook(book);
-                Say($"«{book.Title}» salvato.", true);
-            }
-            catch (InvalidOperationException ex)
-            {
-                Say(ex.Message, false);
-            }
+            _db.SaveBook(book);
+            Say($"«{book.Title}» salvato.", true);
             Reload();
         }
     }
@@ -121,7 +125,7 @@ public partial class LibriView : UserControl, IReloadable
         var archiviato = _db.ArchiveBook(book.Id);
         Say(archiviato
                 ? $"«{book.Title}» archiviato."
-                : $"«{book.Title}» ha ancora copie in prestito: prima registra il rientro.",
+                : $"«{book.Title}» è ancora fuori in prestito: prima registra il rientro.",
             archiviato);
         Reload();
     }

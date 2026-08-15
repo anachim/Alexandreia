@@ -20,6 +20,7 @@ public partial class MainWindow : Window
         var views = new Control[]
         {
             new LibriView(db),
+            new UtentiView(db),
             new PrestitiView(db),
             new MetricheView(db),
             new ImportView(db),

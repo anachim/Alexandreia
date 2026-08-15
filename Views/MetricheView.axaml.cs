@@ -25,8 +25,8 @@ public partial class MetricheView : UserControl, IReloadable
     {
         var s = _db.Stats();
         Cards.Children.Clear();
-        AddCard(s.Books, "Titoli");
-        AddCard(s.Copies, "Copie");
+        AddCard(s.Books, "Libri");
+        AddCard(s.Members, "Utenti");
         AddCard(s.OpenLoans, "Fuori ora");
         AddCard(s.Overdue, "In ritardo", alert: s.Overdue > 0);
         AddCard(s.TotalLoans, "Prestiti totali");

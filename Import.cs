@@ -7,46 +7,73 @@ namespace Alexandreia;
 
 public record ColumnInfo(int Index, string Header, int Filled, string? MappedTo, string[] Samples);
 
+/// <summary>Una riga del foglio: il libro e, se c'è, a chi è prestato.</summary>
+public class ImportedRow
+{
+    public required Book Book { get; init; }
+    public string? Person { get; init; }
+    public string? PersonNotes { get; init; }
+    public DateTime? LoanedAt { get; init; }
+    public DateTime? DueAt { get; init; }
+
+    public bool HasLoan => !string.IsNullOrWhiteSpace(Person);
+}
+
 public record ImportReport
 {
     public string Sheet { get; init; } = "";
     public int HeaderRow { get; init; }
     public int DataRows { get; init; }
     public List<ColumnInfo> Columns { get; init; } = [];
-    public List<Book> Books { get; init; } = [];
+    public List<ImportedRow> Rows { get; init; } = [];
     public int SkippedNoTitle { get; init; }
     public List<string> Warnings { get; init; } = [];
 
+    public List<Book> Books => [.. Rows.Select(r => r.Book)];
+    public int Loans => Rows.Count(r => r.HasLoan);
+
     /// <summary>Niente da caricare: foglio vuoto, o nessuna colonna riconosciuta come titolo.</summary>
-    public bool Empty => Books.Count == 0;
+    public bool Empty => Rows.Count == 0;
 }
 
 /// <summary>
-/// Import da Excel in due tempi: prima si guarda cosa c'e' nel foglio, poi si scrive.
-/// La lettura del file e' una riga sola; tutto il resto lavora su matrici di celle,
-/// cosi' la parte che puo' sbagliare e' testabile senza un .xlsx di prova.
+/// Lettura di un foglio Excel in due tempi: prima si guarda cosa c'e', poi si scrive.
+/// ReadWorkbook e' l'unica parte che tocca il disco; Plan e' pura e lavora su matrici di
+/// celle, cosi' la parte che puo' sbagliare e' testabile senza un .xlsx di prova.
+///
+/// E' anche il formato in cui esportiamo: stesse colonne, cosi' un archivio si porta da un
+/// PC all'altro con un file che resta leggibile.
 ///
 /// Nessuna deduplica: i libri si caricano come si trovano, una riga una scheda.
-/// Ripulire i doppioni sta a chi possiede i dati.
 /// </summary>
 public static class Import
 {
+    public const string FTitle = "Titolo";
+    public const string FAuthor = "Autore";
+    public const string FNotes = "Nota del libro";
+    public const string FPerson = "Prestato a";
+    public const string FPersonNotes = "Nota della persona";
+    public const string FLoanedAt = "Prestato il";
+    public const string FDueAt = "Rientro entro";
+
+    /// <summary>Quanti giorni dura un prestito importato che non porta con sé una scadenza.</summary>
+    public const int DefaultLoanDays = 30;
+
     // Riconoscimento per corrispondenza esatta dell'intestazione, niente euristiche furbe:
     // una colonna mappata sul campo sbagliato su 1400 righe non te ne accorgi finche' non e' tardi.
-    // Un typo tipo "Titollo" non lo prendera' mai nessuna lista: per quello c'e' la correzione a mano.
+    // Un typo tipo "Titollo" non lo prendera' mai nessuna lista: per quello c'e' la tendina.
     static readonly (string Field, string[] Names)[] Synonyms =
     [
-        ("Title",     ["titolo", "title", "opera", "denominazione", "titolo opera", "libro", "volume",
-                       "descrizione", "nome"]),
-        ("Author",    ["autore", "autori", "author", "authors", "curatore", "scrittore"]),
-        ("Isbn",      ["isbn", "ean", "codice isbn", "codice a barre", "isbn 13", "codice"]),
-        ("Year",      ["anno", "year", "anno edizione", "anno di edizione", "anno pubblicazione",
-                       "anno di pubblicazione", "data"]),
-        ("Publisher", ["editore", "casa editrice", "publisher", "edizioni", "edizione"]),
-        ("Location",  ["collocazione", "scaffale", "posizione", "segnatura", "ripiano", "armadio",
-                       "sezione", "sala", "settore"]),
-        ("Copies",    ["copie", "n copie", "numero copie", "quantita", "esemplari", "qta", "pezzi",
-                       "n", "num"]),
+        (FTitle,       ["titolo", "title", "opera", "libro", "volume", "denominazione", "descrizione"]),
+        (FAuthor,      ["autore", "autori", "author", "authors", "curatore", "scrittore"]),
+        (FNotes,       ["nota", "note", "nota libro", "nota del libro", "annotazioni", "osservazioni",
+                        "commento", "commenti"]),
+        (FPerson,      ["prestato a", "a chi", "a chi e prestato", "in prestito a", "chi lo ha",
+                        "chi ce l ha", "persona", "utente", "lettore", "preso da"]),
+        (FPersonNotes, ["nota persona", "nota della persona", "nota utente", "note persona",
+                        "nota lettore"]),
+        (FLoanedAt,    ["prestato il", "data prestito", "data del prestito", "dal"]),
+        (FDueAt,       ["rientro entro", "scadenza", "da restituire entro", "restituzione", "al"]),
     ];
 
     public static readonly string[] Fields = [.. Synonyms.Select(s => s.Field)];
@@ -84,7 +111,7 @@ public static class Import
     // --- Analisi e conversione (pura, testabile) -------------------------
 
     /// <param name="overrides">
-    /// Correzioni manuali intestazione -> campo. Un valore vuoto significa "non mappare".
+    /// Correzioni manuali intestazione -> campo. Un valore vuoto significa "non importare".
     /// </param>
     public static ImportReport Plan(
         IReadOnlyList<object?[]> rows,
@@ -120,7 +147,7 @@ public static class Import
             map[i] = field;
         }
 
-        if (!claimed.Contains("Title"))
+        if (!claimed.Contains(FTitle))
             warnings.Add("Nessuna colonna riconosciuta come Titolo: indica a mano quale colonna lo contiene.");
 
         var data = rows.Skip(headerRow + 1).ToList();
@@ -137,7 +164,7 @@ public static class Import
                 [.. values.Where(v => v is not null).Distinct().Take(3)!]));
         }
 
-        var books = new List<Book>();
+        var righe = new List<ImportedRow>();
         var skipped = 0;
 
         foreach (var row in data)
@@ -148,25 +175,22 @@ public static class Import
                 return i >= 0 && i < row.Length ? row[i] : null;
             }
 
-            var title = Text(Cell("Title"));
+            var title = Text(Cell(FTitle));
             if (title is null) { skipped++; continue; }
 
-            // Quello che non sappiamo dove mettere finisce nelle note, non nel cestino.
-            var notes = string.Join("\n", headers.Select((h, i) =>
-                map[i] is null && i < row.Length && Text(row[i]) is { } v
-                    ? $"{Text(h) ?? $"colonna {i + 1}"}: {v}"
-                    : null).Where(x => x is not null));
-
-            books.Add(new Book
+            // Le colonne non mappate si scartano: si importano solo i campi riconosciuti.
+            righe.Add(new ImportedRow
             {
-                Title = title,
-                Author = Text(Cell("Author")) ?? "",
-                Isbn = Text(Cell("Isbn")),
-                Publisher = Text(Cell("Publisher")),
-                Year = ToYear(Cell("Year")),
-                Location = Text(Cell("Location")),
-                Copies = ToCopies(Cell("Copies")),
-                Notes = notes.Length > 0 ? notes : null,
+                Book = new Book
+                {
+                    Title = title,
+                    Author = Text(Cell(FAuthor)) ?? "",
+                    Notes = Text(Cell(FNotes)),
+                },
+                Person = Text(Cell(FPerson)),
+                PersonNotes = Text(Cell(FPersonNotes)),
+                LoanedAt = ToDate(Cell(FLoanedAt)),
+                DueAt = ToDate(Cell(FDueAt)),
             });
         }
 
@@ -176,7 +200,7 @@ public static class Import
             HeaderRow = headerRow,
             DataRows = data.Count,
             Columns = columns,
-            Books = books,
+            Rows = righe,
             SkippedNoTitle = skipped,
             Warnings = warnings,
         };
@@ -185,7 +209,7 @@ public static class Import
     static string? Map(string? header, IReadOnlyDictionary<string, string>? overrides)
     {
         if (header is null) return null;
-        // Un override vuoto significa "questa colonna non va mappata": serve a poter
+        // Un override vuoto significa "questa colonna non va importata": serve a poter
         // togliere a mano un accoppiamento che il riconoscimento automatico rimetterebbe.
         if (overrides is not null)
             foreach (var (k, v) in overrides)
@@ -208,7 +232,7 @@ public static class Import
         var s = v switch
         {
             null => null,
-            DateTime d => d.ToString("yyyy-MM-dd"),
+            DateTime d => d.ToString("dd/MM/yyyy"),
             double d => d == Math.Floor(d) ? ((long)d).ToString(CultureInfo.InvariantCulture)
                                            : d.ToString(CultureInfo.InvariantCulture),
             _ => Convert.ToString(v, CultureInfo.InvariantCulture),
@@ -217,16 +241,17 @@ public static class Import
         return string.IsNullOrEmpty(s) ? null : s;
     }
 
-    static int? ToYear(object? v)
-    {
-        if (v is DateTime d) return d.Year;
-        var m = Regex.Match(Text(v) ?? "", @"\d{4}");
-        return m.Success && int.TryParse(m.Value, out var y) && y is >= 1 and <= 2100 ? y : null;
-    }
+    static readonly CultureInfo Italian = CultureInfo.GetCultureInfo("it-IT");
 
-    static int ToCopies(object? v)
+    static DateTime? ToDate(object? v)
     {
-        var m = Regex.Match(Text(v) ?? "", @"\d+");
-        return m.Success && int.TryParse(m.Value, out var n) && n > 0 ? n : 1;
+        if (v is DateTime d) return d;
+        var s = Text(v);
+        if (s is null) return null;
+
+        // Prima l'italiano: in un foglio loro «03/04/2026» è il 3 aprile, non il 4 marzo.
+        return DateTime.TryParse(s, Italian, DateTimeStyles.None, out var it) ? it
+             : DateTime.TryParse(s, CultureInfo.InvariantCulture, DateTimeStyles.None, out var inv) ? inv
+             : null;
     }
 }

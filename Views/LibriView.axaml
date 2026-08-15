@@ -6,7 +6,7 @@
     <DockPanel LastChildFill="True">
 
         <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Spacing="10" Margin="0,0,0,10">
-            <TextBox Name="Search" Width="300" PlaceholderText="Cerca titolo, autore, ISBN…" />
+            <TextBox Name="Search" Width="300" PlaceholderText="Cerca titolo, autore, nota…" />
             <CheckBox Name="OnlyAvailable" Content="Solo disponibili" VerticalAlignment="Center" />
             <Button Name="New" Content="Nuovo libro" />
         </StackPanel>
@@ -17,7 +17,7 @@
         <Border Name="LendPanel" DockPanel.Dock="Top" Classes="card" IsVisible="False" Margin="0,0,0,10">
             <StackPanel Orientation="Horizontal" Spacing="10">
                 <TextBlock Name="LendTitle" VerticalAlignment="Center" FontWeight="SemiBold" />
-                <TextBox Name="Borrower" Width="200" PlaceholderText="A chi?" />
+                <ComboBox Name="Person" MinWidth="220" PlaceholderText="A chi?" />
                 <TextBlock Text="rientro entro" VerticalAlignment="Center" Classes="muted" />
                 <CalendarDatePicker Name="DueAt" Width="150" />
                 <Button Name="ConfirmLend" Content="Conferma" />
@@ -27,16 +27,14 @@
 
         <TextBlock Name="Empty" DockPanel.Dock="Bottom" Classes="muted" Margin="0,10,0,0" IsVisible="False" />
 
+        <!-- Mode=OneWay: i DataGridTextColumn riscrivono nel modello anche con IsReadOnly. -->
         <DataGrid Name="Grid" AutoGenerateColumns="False" IsReadOnly="True" x:DataType="m:Book"
                   GridLinesVisibility="Horizontal" CanUserSortColumns="True">
-            <!-- Mode=OneWay: vedi PrestitiView, i DataGridTextColumn riscrivono nel modello. -->
             <DataGrid.Columns>
                 <DataGridTextColumn Header="Titolo" Binding="{Binding Title, Mode=OneWay}" Width="*" />
-                <DataGridTextColumn Header="Autore" Binding="{Binding Author, Mode=OneWay}" Width="180" />
-                <DataGridTextColumn Header="Anno" Binding="{Binding Year, Mode=OneWay}" Width="85" />
-                <DataGridTextColumn Header="Collocazione" Binding="{Binding Location, Mode=OneWay}" Width="120" />
-                <DataGridTextColumn Header="Disponibili" Binding="{Binding Available, Mode=OneWay}" Width="105" />
-                <DataGridTextColumn Header="Copie" Binding="{Binding Copies, Mode=OneWay}" Width="80" />
+                <DataGridTextColumn Header="Autore" Binding="{Binding Author, Mode=OneWay}" Width="200" />
+                <DataGridTextColumn Header="Nota" Binding="{Binding Notes, Mode=OneWay}" Width="200" />
+                <DataGridTextColumn Header="Prestato a" Binding="{Binding LentTo, Mode=OneWay}" Width="170" />
                 <DataGridTemplateColumn Header="" Width="230">
                     <DataGridTemplateColumn.CellTemplate>
                         <DataTemplate x:DataType="m:Book">

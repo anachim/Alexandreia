@@ -52,10 +52,11 @@
             <ItemsControl Name="Never">
                 <ItemsControl.ItemTemplate>
                     <DataTemplate x:DataType="m:Book">
-                        <Grid ColumnDefinitions="300,180,110" Margin="0,2">
+                        <Grid ColumnDefinitions="300,200,*" Margin="0,2">
                             <TextBlock Text="{Binding Title}" TextTrimming="CharacterEllipsis" />
                             <TextBlock Grid.Column="1" Text="{Binding Author}" Classes="muted" />
-                            <TextBlock Grid.Column="2" Text="{Binding Location}" Classes="muted" />
+                            <TextBlock Grid.Column="2" Text="{Binding Notes}" Classes="muted"
+                                       TextTrimming="CharacterEllipsis" />
                         </Grid>
                     </DataTemplate>
                 </ItemsControl.ItemTemplate>

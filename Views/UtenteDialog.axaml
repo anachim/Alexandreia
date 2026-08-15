@@ -1,19 +1,19 @@
 <Window xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        x:Class="Alexandreia.LibroDialog"
-        Title="Libro" Width="460" SizeToContent="Height"
+        x:Class="Alexandreia.UtenteDialog"
+        Title="Utente" Width="460" SizeToContent="Height"
         WindowStartupLocation="CenterOwner" CanResize="False">
 
     <StackPanel Margin="20" Spacing="10">
 
         <StackPanel Spacing="3">
-            <TextBlock Text="Titolo" Classes="muted" />
-            <TextBox Name="Titolo" />
+            <TextBlock Text="Cognome" Classes="muted" />
+            <TextBox Name="Cognome" />
         </StackPanel>
 
         <StackPanel Spacing="3">
-            <TextBlock Text="Autore" Classes="muted" />
-            <TextBox Name="Autore" />
+            <TextBlock Text="Nome" Classes="muted" />
+            <TextBox Name="Nome" />
         </StackPanel>
 
         <StackPanel Spacing="3">

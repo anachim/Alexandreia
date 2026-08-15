@@ -12,8 +12,7 @@
   <!-- SkiaSharp e HarfBuzz spediscono i .pdb nativi accanto alle librerie: sono 105 MB di
        simboli che finirebbero nel pacchetto consegnato. Arrivano come asset nativi, quindi
        non basta DebugType=none: vanno tolti dalla lista di pubblicazione. -->
-  <Target Name="RimuoviPdbDalPacchetto" AfterTargets="ComputeResolvedFilesToPublishList"
-          Condition="'$(Configuration)' == 'Release'">
+  <Target Name="RimuoviPdbDalPacchetto" AfterTargets="ComputeResolvedFilesToPublishList" Condition="'$(Configuration)' == 'Release'">
     <ItemGroup>
       <ResolvedFileToPublish Remove="@(ResolvedFileToPublish)" Condition="'%(Extension)' == '.pdb'" />
     </ItemGroup>
@@ -33,6 +32,7 @@
     <PackageReference Include="Avalonia.Themes.Fluent" Version="12.1.1" />
     <PackageReference Include="Avalonia.Fonts.Inter" Version="12.1.1" />
     <PackageReference Include="Avalonia.Controls.DataGrid" Version="12.1.1" />
+    <PackageReference Include="ClosedXML" Version="0.105.1" />
     <PackageReference Include="Dapper" Version="2.1.79" />
     <PackageReference Include="ExcelDataReader" Version="3.9.0" />
     <PackageReference Include="Microsoft.Data.Sqlite" Version="10.0.11" />

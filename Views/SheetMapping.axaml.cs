@@ -5,7 +5,7 @@ namespace Alexandreia;
 /// <summary>Riga della tabella di mappatura. <c>Field</c> è scrivibile: è la correzione manuale.</summary>
 public class ColumnChoice
 {
-    public const string None = "(niente — finisce nelle note)";
+    public const string None = "(non importare)";
 
     public required string Header { get; init; }
     public required int Filled { get; init; }

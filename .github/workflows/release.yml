@@ -21,20 +21,19 @@ jobs:
       - name: Test
         run: dotnet test tests --nologo
 
-      # Un solo runner per tutte e tre le piattaforme: .NET compila self-contained
-      # per gli altri sistemi senza bisogno di girarci sopra.
+      # Solo Windows: gira su un portatile con Windows 11. Il codice resta portabile
+      # (Avalonia + SQLite), quindi aggiungere linux-x64 o osx-arm64 è una parola qui.
       - name: Publish
         run: |
           version="${GITHUB_REF_NAME#v}"
-          for rid in win-x64 linux-x64 osx-arm64; do
-            dotnet publish -c Release -r "$rid" --self-contained \
-              -p:PublishSingleFile=true \
-              -p:IncludeNativeLibrariesForSelfExtract=true \
-              -p:DebugType=none \
-              -p:Version="$version" \
-              -o "out/$rid"
-            (cd out && zip -qr "../Alexandreia-$version-$rid.zip" "$rid")
-          done
+          rid=win-x64
+          dotnet publish -c Release -r "$rid" --self-contained \
+            -p:PublishSingleFile=true \
+            -p:IncludeNativeLibrariesForSelfExtract=true \
+            -p:DebugType=none \
+            -p:Version="$version" \
+            -o "out/$rid"
+          (cd out && zip -qr "../Alexandreia-$version-$rid.zip" "$rid")
 
       - name: Release
         env:

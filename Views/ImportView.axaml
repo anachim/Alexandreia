@@ -6,6 +6,17 @@
 
     <DockPanel LastChildFill="True">
 
+        <Border DockPanel.Dock="Top" Classes="card" Margin="0,0,0,16">
+            <DockPanel LastChildFill="True">
+                <Button Name="DoExport" Content="Esporta…" DockPanel.Dock="Left" Margin="0,0,14,0" />
+                <TextBlock Name="ExportResult" VerticalAlignment="Center" Classes="muted"
+                           TextWrapping="Wrap"
+                           Text="Salva tutto l'archivio in un file Excel, con chi ha in prestito cosa. È lo stesso formato che questa scheda sa rileggere, quindi serve sia da copia di sicurezza sia per portare i dati su un altro computer." />
+            </DockPanel>
+        </Border>
+
+        <TextBlock DockPanel.Dock="Top" Text="Carica da un file Excel" Classes="h" Margin="0,0,0,8" />
+
         <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Spacing="10" Margin="0,0,0,10">
             <Button Name="Pick" Content="Scegli file…" />
             <TextBlock Name="FileName" VerticalAlignment="Center" Classes="muted" />
@@ -28,7 +39,8 @@
                  contenuto, e un testo che cambia resta disposto con l'ingombro di prima. -->
             <DockPanel LastChildFill="True">
                 <Button Name="Apply" Content="Importa" DockPanel.Dock="Left" Margin="0,0,14,0" />
-                <TextBlock Name="Result" DockPanel.Dock="Right" VerticalAlignment="Center" Classes="muted" />
+                <CheckBox Name="Replace" DockPanel.Dock="Right" VerticalAlignment="Center"
+                          Content="Sostituisci tutto l'archivio" />
                 <TextBlock Name="Summary" VerticalAlignment="Center" FontWeight="SemiBold" />
             </DockPanel>
         </Border>

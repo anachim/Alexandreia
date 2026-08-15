@@ -20,7 +20,7 @@
             <DataGrid.Columns>
                 <DataGridTextColumn Header="Titolo" Binding="{Binding Title, Mode=OneWay}" Width="*" />
                 <DataGridTextColumn Header="Autore" Binding="{Binding Author, Mode=OneWay}" Width="150" />
-                <DataGridTextColumn Header="A chi" Binding="{Binding Borrower, Mode=OneWay}" Width="150" />
+                <DataGridTextColumn Header="A chi" Binding="{Binding MemberName, Mode=OneWay}" Width="180" />
                 <DataGridTextColumn Header="Prestato il" Width="100"
                                     Binding="{Binding LoanedAt, Mode=OneWay, StringFormat='{}{0:dd/MM/yyyy}'}" />
                 <DataGridTemplateColumn Header="Rientro entro" Width="230">

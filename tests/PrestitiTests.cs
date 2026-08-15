@@ -3,19 +3,21 @@ using Alexandreia;
 namespace Alexandreia.Tests;
 
 /// <summary>
-/// Copre l'unica logica non banale: disponibilità delle copie, prestito, rientro.
-/// Tutto il resto è CRUD e query di aggregazione che il DB garantisce da sé.
+/// L'unica logica non banale: un libro è una copia sola, quindi o è libero o è fuori.
+/// Il resto è CRUD e query di aggregazione che il database garantisce da sé.
 /// </summary>
 public class PrestitiTests : IDisposable
 {
     readonly string _path = Path.Combine(Path.GetTempPath(), $"alexandreia-test-{Guid.NewGuid():N}.db");
     readonly Db _db;
     readonly long _libro;
+    readonly long _ipazia;
 
     public PrestitiTests()
     {
         _db = new Db(_path);
-        _libro = _db.SaveBook(new Book { Title = "Elementi", Author = "Euclide", Copies = 1 });
+        _libro = _db.SaveBook(new Book { Title = "Elementi", Author = "Euclide" });
+        _ipazia = _db.SaveMember(new Member { LastName = "Ipazia" });
     }
 
     public void Dispose()
@@ -23,67 +25,64 @@ public class PrestitiTests : IDisposable
         Microsoft.Data.Sqlite.SqliteConnection.ClearAllPools();
         foreach (var f in Directory.GetFiles(Path.GetTempPath(), Path.GetFileName(_path) + "*"))
             File.Delete(f);
+        GC.SuppressFinalize(this);
     }
 
     [Fact]
-    public void Prestito_scala_la_disponibilita()
+    public void Il_prestito_occupa_il_libro()
     {
-        Assert.Equal(1, _db.Book(_libro)!.Available);
-        Assert.True(_db.Lend(_libro, "Ipazia", DateTime.Today.AddDays(30)));
-        Assert.Equal(0, _db.Book(_libro)!.Available);
+        Assert.True(_db.Book(_libro)!.IsAvailable);
+
+        Assert.True(_db.Lend(_libro, _ipazia, DateTime.Today.AddDays(30)));
+
+        var dopo = _db.Book(_libro)!;
+        Assert.False(dopo.IsAvailable);
+        Assert.Equal("Ipazia", dopo.LentTo);
     }
 
     [Fact]
-    public void Ultima_copia_non_si_presta_due_volte()
+    public void Lo_stesso_libro_non_esce_due_volte()
     {
-        Assert.True(_db.Lend(_libro, "Ipazia", DateTime.Today.AddDays(30)));
-        Assert.False(_db.Lend(_libro, "Eratostene", DateTime.Today.AddDays(30)));
+        var altro = _db.SaveMember(new Member { LastName = "Eratostene" });
+
+        Assert.True(_db.Lend(_libro, _ipazia, DateTime.Today.AddDays(30)));
+        Assert.False(_db.Lend(_libro, altro, DateTime.Today.AddDays(30)));
     }
 
     [Fact]
-    public void Due_copie_due_prestiti()
+    public void Due_copie_sono_due_schede_e_si_prestano_a_due_persone()
     {
-        var b = _db.Book(_libro)!;
-        b.Copies = 2;
-        _db.SaveBook(b);
+        var seconda = _db.SaveBook(new Book { Title = "Elementi", Author = "Euclide" });
+        var altro = _db.SaveMember(new Member { LastName = "Eratostene" });
 
-        Assert.True(_db.Lend(_libro, "Ipazia", DateTime.Today.AddDays(30)));
-        Assert.True(_db.Lend(_libro, "Eratostene", DateTime.Today.AddDays(30)));
-        Assert.False(_db.Lend(_libro, "Archimede", DateTime.Today.AddDays(30)));
+        Assert.True(_db.Lend(_libro, _ipazia, DateTime.Today.AddDays(30)));
+        Assert.True(_db.Lend(seconda, altro, DateTime.Today.AddDays(30)));
     }
 
     [Fact]
-    public void Rientro_libera_la_copia_e_non_si_registra_due_volte()
+    public void Rientro_libera_il_libro_e_non_si_registra_due_volte()
     {
-        _db.Lend(_libro, "Ipazia", DateTime.Today.AddDays(30));
+        _db.Lend(_libro, _ipazia, DateTime.Today.AddDays(30));
         var prestito = _db.Loans().Single();
 
         Assert.True(_db.Return(prestito.Id));
-        Assert.Equal(1, _db.Book(_libro)!.Available);
+        Assert.True(_db.Book(_libro)!.IsAvailable);
         Assert.False(_db.Return(prestito.Id));
-        Assert.True(_db.Lend(_libro, "Eratostene", DateTime.Today.AddDays(30)));
+        Assert.True(_db.Lend(_libro, _ipazia, DateTime.Today.AddDays(30)));
     }
 
     [Fact]
-    public void Nome_di_chi_prende_il_libro_obbligatorio()
+    public void Non_si_presta_a_un_utente_archiviato()
     {
-        Assert.Throws<ArgumentException>(() => _db.Lend(_libro, "   ", DateTime.Today.AddDays(30)));
-    }
+        _db.ArchiveMember(_ipazia);
 
-    [Fact]
-    public void Non_si_scende_sotto_le_copie_gia_fuori()
-    {
-        _db.Lend(_libro, "Ipazia", DateTime.Today.AddDays(30));
-        var b = _db.Book(_libro)!;
-        b.Copies = 0;
-
-        Assert.Throws<InvalidOperationException>(() => _db.SaveBook(b));
+        Assert.False(_db.Lend(_libro, _ipazia, DateTime.Today.AddDays(30)));
     }
 
     [Fact]
     public void Archiviazione_bloccata_finche_il_libro_e_fuori()
     {
-        _db.Lend(_libro, "Ipazia", DateTime.Today.AddDays(30));
+        _db.Lend(_libro, _ipazia, DateTime.Today.AddDays(30));
         Assert.False(_db.ArchiveBook(_libro));
 
         _db.Return(_db.Loans().Single().Id);
@@ -92,48 +91,38 @@ public class PrestitiTests : IDisposable
     }
 
     [Fact]
+    public void Un_utente_con_libri_fuori_non_si_archivia()
+    {
+        _db.Lend(_libro, _ipazia, DateTime.Today.AddDays(30));
+        Assert.False(_db.ArchiveMember(_ipazia));
+        Assert.Equal(1, _db.Members().Single().OpenLoans);
+
+        _db.Return(_db.Loans().Single().Id);
+        Assert.True(_db.ArchiveMember(_ipazia));
+        Assert.Empty(_db.Members());
+    }
+
+    [Fact]
     public void Il_ritardo_finisce_nelle_metriche()
     {
-        _db.Lend(_libro, "Ipazia", DateTime.Today.AddDays(-1));
+        _db.Lend(_libro, _ipazia, DateTime.Today.AddDays(-3));
 
         var s = _db.Stats();
         Assert.Equal(1, s.OpenLoans);
         Assert.Equal(1, s.Overdue);
+        Assert.Equal(1, s.Members);
         Assert.Equal(0, s.NeverLent);
-        Assert.True(_db.Loans().Single().Overdue);
-    }
 
-    [Fact]
-    public void Mai_prestati_esclude_quelli_usciti()
-    {
-        var altro = _db.SaveBook(new Book { Title = "Almagesto", Author = "Tolomeo" });
-        _db.Lend(_libro, "Ipazia", DateTime.Today.AddDays(30));
-
-        Assert.Equal("Almagesto", Assert.Single(_db.NeverLent()).Title);
-        Assert.Equal(1, _db.Stats().NeverLent);
-    }
-
-    [Fact]
-    public void Classifica_ordinata_per_numero_di_prestiti()
-    {
-        var altro = _db.SaveBook(new Book { Title = "Almagesto", Author = "Tolomeo" });
-        foreach (var chi in new[] { "Ipazia", "Eratostene" })
-        {
-            _db.Lend(_libro, chi, DateTime.Today.AddDays(30));
-            _db.Return(_db.Loans().Single(l => l.BookId == _libro).Id);
-        }
-        _db.Lend(altro, "Archimede", DateTime.Today.AddDays(30));
-
-        var top = _db.TopBooks(DateTime.Today.AddMonths(-1));
-        Assert.Equal("Elementi", top[0].Title);
-        Assert.Equal(2, top[0].Loans);
-        Assert.Equal(1, top[1].Loans);
+        var prestito = _db.Loans().Single();
+        Assert.True(prestito.Overdue);
+        Assert.Contains("in ritardo di 3 gg", prestito.DueLabel);
+        Assert.Equal("Ipazia", prestito.MemberName);
     }
 
     [Fact]
     public void Metriche_su_archivio_senza_prestiti()
     {
-        // Risultato vuoto: SQLite non dichiara il tipo delle colonne calcolate. Deve reggere lo stesso.
+        // Risultato vuoto: SQLite non dichiara il tipo delle colonne calcolate. Deve reggere.
         Assert.Empty(_db.TopBooks(DateTime.Today.AddMonths(-12)));
         Assert.Empty(_db.LoansByMonth(DateTime.Today.AddMonths(-12)));
 
@@ -145,15 +134,51 @@ public class PrestitiTests : IDisposable
     }
 
     [Fact]
-    public void Ricerca_su_titolo_autore_e_disponibilita()
+    public void Mai_prestati_esclude_quelli_usciti()
     {
         _db.SaveBook(new Book { Title = "Almagesto", Author = "Tolomeo" });
+        _db.Lend(_libro, _ipazia, DateTime.Today.AddDays(30));
+
+        Assert.Equal("Almagesto", Assert.Single(_db.NeverLent()).Title);
+        Assert.Equal(1, _db.Stats().NeverLent);
+    }
+
+    [Fact]
+    public void Classifica_ordinata_per_numero_di_prestiti()
+    {
+        var altro = _db.SaveBook(new Book { Title = "Almagesto", Author = "Tolomeo" });
+        for (var i = 0; i < 2; i++)
+        {
+            _db.Lend(_libro, _ipazia, DateTime.Today.AddDays(30));
+            _db.Return(_db.Loans().Single(l => l.BookId == _libro).Id);
+        }
+        _db.Lend(altro, _ipazia, DateTime.Today.AddDays(30));
+
+        var top = _db.TopBooks(DateTime.Today.AddMonths(-1));
+        Assert.Equal("Elementi", top[0].Title);
+        Assert.Equal(2, top[0].Loans);
+        Assert.Equal(1, top[1].Loans);
+    }
+
+    [Fact]
+    public void Ricerca_su_titolo_autore_nota_e_disponibilita()
+    {
+        _db.SaveBook(new Book { Title = "Almagesto", Author = "Tolomeo", Notes = "scaffale B7" });
 
         Assert.Equal("Elementi", Assert.Single(_db.Books("eucl")).Title);
-        Assert.Equal("Almagesto", Assert.Single(_db.Books("almag")).Title);
+        Assert.Equal("Almagesto", Assert.Single(_db.Books("B7")).Title);
         Assert.Equal(2, _db.Books().Count);
 
-        _db.Lend(_libro, "Ipazia", DateTime.Today.AddDays(30));
+        _db.Lend(_libro, _ipazia, DateTime.Today.AddDays(30));
         Assert.Equal("Almagesto", Assert.Single(_db.Books(onlyAvailable: true)).Title);
+    }
+
+    [Fact]
+    public void Ricerca_utenti_per_cognome_e_nota()
+    {
+        _db.SaveMember(new Member { LastName = "Rossi", FirstName = "Mario", Notes = "classe 3B" });
+
+        Assert.Equal("Rossi Mario", Assert.Single(_db.Members("rossi")).FullName);
+        Assert.Equal("Rossi Mario", Assert.Single(_db.Members("3B")).FullName);
     }
 }
