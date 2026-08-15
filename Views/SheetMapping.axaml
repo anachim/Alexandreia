@@ -3,6 +3,7 @@
              xmlns:m="using:Alexandreia"
              x:Class="Alexandreia.SheetMapping">
 
+  <ScrollViewer VerticalScrollBarVisibility="Auto">
     <Border Classes="card" Margin="0,0,0,10" Padding="12,10">
         <!-- La tabella prende l'altezza che le serve, fino a un tetto oltre il quale scorre
              da sola. Non riempie lo spazio disponibile: con la finestra bassa si schiacciava
@@ -41,4 +42,5 @@
             </DataGrid>
         </StackPanel>
     </Border>
+  </ScrollViewer>
 </UserControl>

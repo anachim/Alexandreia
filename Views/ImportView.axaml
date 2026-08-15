@@ -56,10 +56,9 @@
         </Border>
 
         <!-- Una linguetta per foglio: si guarda un foglio alla volta, con le sue colonne
-             sempre in chiaro invece che dietro un bottone da aprire. Dentro uno ScrollViewer,
-             così con la finestra bassa si scorre invece di doverla allargare. -->
-        <ScrollViewer VerticalScrollBarVisibility="Auto">
-            <TabControl Name="Sheets" />
-        </ScrollViewer>
+             sempre in chiaro invece che dietro un bottone da aprire. Lo scorrimento sta
+             dentro la linguetta, non qui attorno: se scorresse tutto, la striscia delle
+             linguette se ne andrebbe su e non sapresti più che foglio stai guardando. -->
+        <TabControl Name="Sheets" />
     </DockPanel>
 </UserControl>
