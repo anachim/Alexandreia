@@ -1,0 +1,89 @@
+@page "/libri/nuovo"
+@page "/libri/{Id:long}"
+@rendermode InteractiveServer
+@inject Db Db
+@inject NavigationManager Nav
+
+<PageTitle>@(Id is null ? "Nuovo libro" : book.Title) — Alexandreia</PageTitle>
+<h2>@(Id is null ? "Nuovo libro" : "Modifica libro")</h2>
+
+@if (error is not null)
+{
+    <div class="msg">@error</div>
+}
+
+<EditForm Model="book" OnValidSubmit="Save" FormName="libro">
+    <DataAnnotationsValidator />
+
+    <div class="field">
+        <label>Titolo</label>
+        <InputText @bind-Value="book.Title" autofocus />
+        <ValidationMessage For="() => book.Title" />
+    </div>
+
+    <div class="field">
+        <label>Autore</label>
+        <InputText @bind-Value="book.Author" />
+    </div>
+
+    <div class="row">
+        <div class="field">
+            <label>ISBN</label>
+            <InputText @bind-Value="book.Isbn" />
+        </div>
+        <div class="field">
+            <label>Anno</label>
+            <InputNumber @bind-Value="book.Year" />
+            <ValidationMessage For="() => book.Year" />
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="field">
+            <label>Editore</label>
+            <InputText @bind-Value="book.Publisher" />
+        </div>
+        <div class="field">
+            <label>Collocazione</label>
+            <InputText @bind-Value="book.Location" />
+        </div>
+        <div class="field">
+            <label>Copie</label>
+            <InputNumber @bind-Value="book.Copies" />
+            <ValidationMessage For="() => book.Copies" />
+        </div>
+    </div>
+
+    <div class="field">
+        <label>Note</label>
+        <InputTextArea @bind-Value="book.Notes" rows="3" />
+    </div>
+
+    <div class="toolbar">
+        <button type="submit">Salva</button>
+        <button type="button" class="ghost" @onclick="@(() => Nav.NavigateTo("libri"))">Annulla</button>
+    </div>
+</EditForm>
+
+@code {
+    [Parameter] public long? Id { get; set; }
+
+    Book book = new();
+    string? error;
+
+    protected override void OnParametersSet() =>
+        book = Id is null ? new Book() : Db.Book(Id.Value) ?? new Book();
+
+    void Save()
+    {
+        try
+        {
+            Db.SaveBook(book);
+            Nav.NavigateTo("libri");
+        }
+        catch (InvalidOperationException ex)
+        {
+            error = ex.Message;
+        }
+    }
+}

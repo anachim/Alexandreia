@@ -1,0 +1,88 @@
+@page "/metriche"
+@rendermode InteractiveServer
+@inject Db Db
+
+<PageTitle>Metriche — Alexandreia</PageTitle>
+<h2>Metriche</h2>
+
+@{
+    var s = Db.Stats();
+    var since = period switch
+    {
+        "anno" => new DateTime(DateTime.Today.Year, 1, 1),
+        "12mesi" => DateTime.Today.AddMonths(-12),
+        _ => DateTime.MinValue
+    };
+    var top = Db.TopBooks(since);
+    var months = Db.LoansByMonth(since);
+    var maxTop = top.Count > 0 ? top[0].Loans : 1;
+    var maxMonth = months.Count > 0 ? months.Max(m => m.Loans) : 1;
+}
+
+<div class="cards">
+    <div class="card"><div class="n">@s.Books</div><div class="k">Titoli</div></div>
+    <div class="card"><div class="n">@s.Copies</div><div class="k">Copie</div></div>
+    <div class="card"><div class="n">@s.OpenLoans</div><div class="k">Fuori ora</div></div>
+    <div class="card"><div class="n @(s.Overdue > 0 ? "overdue" : "")">@s.Overdue</div><div class="k">In ritardo</div></div>
+    <div class="card"><div class="n">@s.TotalLoans</div><div class="k">Prestiti totali</div></div>
+    <div class="card"><div class="n">@s.AvgDays.ToString("0.#")</div><div class="k">Giorni medi</div></div>
+    <div class="card"><div class="n">@s.NeverLent</div><div class="k">Mai prestati</div></div>
+</div>
+
+<div class="toolbar">
+    <label>Periodo</label>
+    <select @bind="period">
+        <option value="12mesi">Ultimi 12 mesi</option>
+        <option value="anno">Anno corrente</option>
+        <option value="sempre">Da sempre</option>
+    </select>
+</div>
+
+<h2>Prestiti per mese</h2>
+<table>
+    <tbody>
+        @foreach (var m in months)
+        {
+            <tr>
+                <td style="width:6rem">@m.Month</td>
+                <td class="num" style="width:3rem">@m.Loans</td>
+                <td><span class="bar" style="width:@(m.Loans * 100 / maxMonth)%"></span></td>
+            </tr>
+        }
+    </tbody>
+</table>
+@if (months.Count == 0) { <p class="empty">Nessun prestito nel periodo.</p> }
+
+<h2>Libri più prestati</h2>
+<table>
+    <thead><tr><th>Titolo</th><th>Autore</th><th class="num">Prestiti</th><th></th></tr></thead>
+    <tbody>
+        @foreach (var t in top)
+        {
+            <tr>
+                <td>@t.Title</td>
+                <td>@t.Author</td>
+                <td class="num">@t.Loans</td>
+                <td style="width:40%"><span class="bar" style="width:@(t.Loans * 100 / maxTop)%"></span></td>
+            </tr>
+        }
+    </tbody>
+</table>
+@if (top.Count == 0) { <p class="empty">Nessun prestito nel periodo.</p> }
+
+<h2>Mai usciti</h2>
+@{ var never = Db.NeverLent(); }
+<table>
+    <thead><tr><th>Titolo</th><th>Autore</th><th>Collocazione</th></tr></thead>
+    <tbody>
+        @foreach (var b in never)
+        {
+            <tr><td>@b.Title</td><td>@b.Author</td><td>@b.Location</td></tr>
+        }
+    </tbody>
+</table>
+@if (never.Count == 0) { <p class="empty">Tutti i libri sono stati prestati almeno una volta.</p> }
+
+@code {
+    string period = "12mesi";
+}
