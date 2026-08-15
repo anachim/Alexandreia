@@ -72,6 +72,31 @@ public class PrestitiTests : IDisposable
     }
 
     [Fact]
+    public void La_proroga_sposta_la_scadenza_e_toglie_il_ritardo()
+    {
+        _db.Lend(_libro, _ipazia, DateTime.Today.AddDays(-3));
+        var prestito = _db.Loans().Single();
+        Assert.True(prestito.Overdue);
+
+        Assert.True(_db.Extend(prestito.Id, DateTime.Today.AddDays(14)));
+
+        var dopo = _db.Loans().Single();
+        Assert.False(dopo.Overdue);
+        Assert.Equal(DateTime.Today.AddDays(14), dopo.DueAt);
+        Assert.Equal(0, _db.Stats().Overdue);
+    }
+
+    [Fact]
+    public void Un_prestito_gia_rientrato_non_si_prolunga()
+    {
+        _db.Lend(_libro, _ipazia, DateTime.Today.AddDays(5));
+        var prestito = _db.Loans().Single();
+        _db.Return(prestito.Id);
+
+        Assert.False(_db.Extend(prestito.Id, DateTime.Today.AddDays(30)));
+    }
+
+    [Fact]
     public void Non_si_presta_a_un_utente_archiviato()
     {
         _db.ArchiveMember(_ipazia);
@@ -116,7 +141,7 @@ public class PrestitiTests : IDisposable
         var prestito = _db.Loans().Single();
         Assert.True(prestito.Overdue);
         Assert.Equal(3, prestito.LateDays);
-        Assert.Equal("3 GIORNI DI RITARDO", prestito.LateLabel);
+        Assert.Equal("RITARDO 3 GG", prestito.LateLabel);
         Assert.Equal("Ipazia", prestito.MemberName);
     }
 

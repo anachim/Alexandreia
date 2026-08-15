@@ -28,14 +28,16 @@
         <TextBlock Name="Empty" DockPanel.Dock="Bottom" Classes="muted" Margin="0,10,0,0" IsVisible="False" />
 
         <!-- Mode=OneWay: i DataGridTextColumn riscrivono nel modello anche con IsReadOnly. -->
+        <!-- Larghezze fisse e colonne ridimensionabili: con una colonna elastica la tabella
+             si stringe fino a rendere illeggibili i titoli invece di far scorrere. -->
         <DataGrid Name="Grid" AutoGenerateColumns="False" IsReadOnly="True" x:DataType="m:Book"
-                  GridLinesVisibility="Horizontal" CanUserSortColumns="True">
+                  GridLinesVisibility="Horizontal" CanUserSortColumns="True" CanUserResizeColumns="True">
             <DataGrid.Columns>
-                <DataGridTextColumn Header="Titolo" Binding="{Binding Title, Mode=OneWay}" Width="*" />
+                <DataGridTextColumn Header="Titolo" Binding="{Binding Title, Mode=OneWay}" Width="280" />
                 <DataGridTextColumn Header="Autore" Binding="{Binding Author, Mode=OneWay}" Width="200" />
-                <DataGridTextColumn Header="Nota" Binding="{Binding Notes, Mode=OneWay}" Width="200" />
-                <DataGridTextColumn Header="Prestato a" Binding="{Binding LentTo, Mode=OneWay}" Width="170" />
-                <DataGridTemplateColumn Header="" Width="250">
+                <DataGridTextColumn Header="Nota" Binding="{Binding Notes, Mode=OneWay}" Width="220" />
+                <DataGridTextColumn Header="Prestato a" Binding="{Binding LentTo, Mode=OneWay}" Width="180" />
+                <DataGridTemplateColumn Header="Azioni" Width="250">
                     <DataGridTemplateColumn.CellTemplate>
                         <DataTemplate x:DataType="m:Book">
                             <StackPanel Orientation="Horizontal" Spacing="4" Margin="4,2">

@@ -12,37 +12,53 @@
         </StackPanel>
 
         <TextBlock Name="Message" DockPanel.Dock="Top" Margin="0,0,0,10" IsVisible="False" />
+
+        <Border Name="ExtendPanel" DockPanel.Dock="Top" Classes="card" IsVisible="False" Margin="0,0,0,10">
+            <StackPanel Orientation="Horizontal" Spacing="10">
+                <TextBlock Name="ExtendTitle" VerticalAlignment="Center" FontWeight="SemiBold" />
+                <TextBlock Text="nuova scadenza" VerticalAlignment="Center" Classes="muted" />
+                <CalendarDatePicker Name="NewDue" Width="150" />
+                <Button Name="ConfirmExtend" Classes="primary" Content="Conferma" />
+                <Button Name="CancelExtend" Content="Annulla" />
+            </StackPanel>
+        </Border>
+
         <TextBlock Name="Empty" DockPanel.Dock="Bottom" Classes="muted" Margin="0,10,0,0" IsVisible="False" />
 
-        <!-- Mode=OneWay ovunque: i DataGridTextColumn riscrivono nel modello anche con IsReadOnly. -->
+        <!-- Larghezze fisse e colonne ridimensionabili: con una colonna elastica la tabella
+             si stringe fino a rendere illeggibili i titoli invece di far scorrere. -->
         <DataGrid Name="Grid" AutoGenerateColumns="False" IsReadOnly="True" x:DataType="m:Loan"
-                  GridLinesVisibility="Horizontal" CanUserSortColumns="True">
+                  GridLinesVisibility="Horizontal" CanUserSortColumns="True" CanUserResizeColumns="True">
             <DataGrid.Columns>
-                <DataGridTextColumn Header="Titolo" Binding="{Binding Title, Mode=OneWay}" Width="*" />
-                <DataGridTextColumn Header="Autore" Binding="{Binding Author, Mode=OneWay}" Width="150" />
-                <DataGridTextColumn Header="A chi" Binding="{Binding MemberName, Mode=OneWay}" Width="180" />
-                <DataGridTextColumn Header="Prestato il" Width="120"
+                <DataGridTextColumn Header="Titolo" Binding="{Binding Title, Mode=OneWay}" Width="250" />
+                <DataGridTextColumn Header="Autore" Binding="{Binding Author, Mode=OneWay}" Width="160" />
+                <DataGridTextColumn Header="A chi" Binding="{Binding MemberName, Mode=OneWay}" Width="170" />
+                <DataGridTextColumn Header="Prestato il" Width="110"
                                     Binding="{Binding LoanedAt, Mode=OneWay, StringFormat='{}{0:dd/MM/yyyy}'}" />
-                <DataGridTextColumn Header="Rientro entro" Width="130"
-                                    Binding="{Binding DueLabel, Mode=OneWay}" />
-                <DataGridTemplateColumn Header="" Width="200">
+                <!-- Data e ritardo nella stessa colonna: sono la stessa informazione, e tenerli
+                     divisi lasciava una colonna vuota su ogni riga in regola. -->
+                <DataGridTemplateColumn Header="Rientro entro" Width="160">
                     <DataGridTemplateColumn.CellTemplate>
                         <DataTemplate x:DataType="m:Loan">
-                            <!-- Il timbro della scadenza: l'unico posto dove il programma alza la voce. -->
-                            <Border Classes="stamp" IsVisible="{Binding Overdue}" Margin="4,3"
-                                    VerticalAlignment="Center">
-                                <TextBlock Text="{Binding LateLabel}" />
-                            </Border>
+                            <StackPanel Spacing="3" Margin="4,4" VerticalAlignment="Center">
+                                <TextBlock Text="{Binding DueLabel}" />
+                                <Border Classes="stamp" IsVisible="{Binding Overdue}">
+                                    <TextBlock Text="{Binding LateLabel}" />
+                                </Border>
+                            </StackPanel>
                         </DataTemplate>
                     </DataGridTemplateColumn.CellTemplate>
                 </DataGridTemplateColumn>
-                <DataGridTextColumn Header="Rientrato" Width="115"
+                <DataGridTextColumn Header="Rientrato" Width="105"
                                     Binding="{Binding ReturnedAt, Mode=OneWay, StringFormat='{}{0:dd/MM/yyyy}'}" />
-                <DataGridTemplateColumn Header="" Width="120">
+                <DataGridTemplateColumn Header="Azioni" Width="200">
                     <DataGridTemplateColumn.CellTemplate>
                         <DataTemplate x:DataType="m:Loan">
-                            <Button Content="Rientrato" Click="OnReturn" Tag="{Binding}" Margin="4,3"
-                                    IsVisible="{Binding IsOpen}" />
+                            <StackPanel Orientation="Horizontal" Spacing="4" Margin="4,3"
+                                        IsVisible="{Binding IsOpen}">
+                                <Button Content="Rientrato" Click="OnReturn" Tag="{Binding}" />
+                                <Button Content="Prolunga" Click="OnExtend" Tag="{Binding}" />
+                            </StackPanel>
                         </DataTemplate>
                     </DataGridTemplateColumn.CellTemplate>
                 </DataGridTemplateColumn>

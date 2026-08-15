@@ -209,12 +209,30 @@ public class UiTests : IDisposable
         // Se questo torna falso: i DataGridTextColumn legano in TwoWay e riscrivono
         // ReturnedAt a default(DateTime), che spegne IsOpen. Servono Mode=OneWay.
         Assert.True(loan.Overdue, $"DueAt={loan.DueAt:d} ReturnedAt={loan.ReturnedAt:o}");
-        Assert.Equal("3 GIORNI DI RITARDO", loan.LateLabel);
+        Assert.Equal("RITARDO 3 GG", loan.LateLabel);
 
         // Il timbro è visibile solo sulla riga in ritardo.
         var timbro = Named<DataGrid>(view, "Grid").GetVisualDescendants().OfType<Border>()
             .Single(b => b.Classes.Contains("stamp"));
         Assert.True(timbro.IsVisible);
+    }
+
+    [AvaloniaFact]
+    public void Prolungo_un_prestito_dalla_scheda()
+    {
+        _db.Lend(_libro, _ipazia, DateTime.Today.AddDays(-3));
+
+        var w = Open();
+        Tab(w, TabPrestiti);
+
+        Click(Labelled(w, "Prolunga"));
+        Named<CalendarDatePicker>(w, "NewDue").SelectedDate = DateTime.Today.AddDays(20);
+        Settle();
+        Click(Labelled(w, "Conferma"));
+
+        var prestito = _db.Loans().Single();
+        Assert.Equal(DateTime.Today.AddDays(20), prestito.DueAt);
+        Assert.False(prestito.Overdue);
     }
 
     [AvaloniaFact]

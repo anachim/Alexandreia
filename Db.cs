@@ -78,8 +78,8 @@ public class Loan
 
     public string DueLabel => DueAt.ToString("dd/MM/yyyy");
 
-    /// <summary>Testo del timbro sulla riga in ritardo.</summary>
-    public string LateLabel => LateDays == 1 ? "1 GIORNO DI RITARDO" : $"{LateDays} GIORNI DI RITARDO";
+    /// <summary>Testo del timbro sulla riga in ritardo. Corto: sta dentro la colonna della data.</summary>
+    public string LateLabel => LateDays == 1 ? "RITARDO 1 GG" : $"RITARDO {LateDays} GG";
 }
 
 // Proprietà settabili, non record posizionali: SQLite non dichiara il tipo delle colonne calcolate
@@ -309,6 +309,14 @@ public class Db
               AND EXISTS (SELECT 1 FROM Members WHERE Id = @memberId AND Archived = 0)
               AND NOT EXISTS (SELECT 1 FROM Loans WHERE BookId = @bookId AND ReturnedAt IS NULL)
             """, new { bookId, memberId, now = DateTime.Now, dueAt = dueAt.Date }) == 1;
+    }
+
+    /// <summary>Sposta la scadenza di un prestito aperto. False se era già rientrato.</summary>
+    public bool Extend(long loanId, DateTime newDue)
+    {
+        using var c = Open();
+        return c.Execute("UPDATE Loans SET DueAt = @due WHERE Id = @loanId AND ReturnedAt IS NULL",
+            new { loanId, due = newDue.Date }) == 1;
     }
 
     /// <summary>Registra il rientro. False se quel prestito era già chiuso.</summary>

@@ -17,6 +17,7 @@ public partial class PrestitiView : UserControl, IReloadable
 
     readonly Db _db = null!;
     readonly ObservableCollection<Loan> _loans = [];
+    Loan? _extending;
 
     public PrestitiView() => InitializeComponent();
 
@@ -30,6 +31,8 @@ public partial class PrestitiView : UserControl, IReloadable
 
         Search.TextChanged += (_, _) => Reload();
         Filtro.SelectionChanged += (_, _) => Reload();
+        CancelExtend.Click += (_, _) => ChiudiProroga();
+        ConfirmExtend.Click += (_, _) => Prolunga();
     }
 
     string Selected => Filtri[Math.Max(0, Filtro.SelectedIndex)].Filter;
@@ -67,6 +70,39 @@ public partial class PrestitiView : UserControl, IReloadable
             ? $"«{loan.Title}» rientrato."
             : $"«{loan.Title}» risultava già rientrato.";
         Message.IsVisible = true;
+        ChiudiProroga();
+        Reload();
+    }
+
+    // --- Proroga --------------------------------------------------------
+
+    void OnExtend(object? sender, RoutedEventArgs e)
+    {
+        _extending = (Loan)((Control)sender!).Tag!;
+        ExtendTitle.Text = $"«{_extending.Title}» a {_extending.MemberName}";
+        // Parte da oggi più i soliti giorni, non dalla scadenza vecchia: chi prolunga
+        // un libro in ritardo vuole altro tempo da adesso, non da un mese fa.
+        NewDue.SelectedDate = DateTime.Today.AddDays(Import.DefaultLoanDays);
+        ExtendPanel.IsVisible = true;
+        Message.IsVisible = false;
+    }
+
+    void ChiudiProroga()
+    {
+        _extending = null;
+        ExtendPanel.IsVisible = false;
+    }
+
+    void Prolunga()
+    {
+        if (_extending is null) return;
+
+        var nuova = NewDue.SelectedDate?.Date ?? DateTime.Today.AddDays(Import.DefaultLoanDays);
+        Message.Text = _db.Extend(_extending.Id, nuova)
+            ? $"«{_extending.Title}» ora rientra entro il {nuova:dd/MM/yyyy}."
+            : $"«{_extending.Title}» risulta già rientrato.";
+        Message.IsVisible = true;
+        ChiudiProroga();
         Reload();
     }
 }

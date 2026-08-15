@@ -19,7 +19,8 @@
             <TextBlock Name="Problema" Classes="overdue" TextWrapping="Wrap" IsVisible="False" />
 
             <DataGrid Name="Grid" AutoGenerateColumns="False" IsReadOnly="True" MaxHeight="300"
-                      IsVisible="False" x:DataType="m:ColumnChoice" GridLinesVisibility="Horizontal">
+                      IsVisible="False" x:DataType="m:ColumnChoice" GridLinesVisibility="Horizontal"
+                      CanUserResizeColumns="True">
                 <DataGrid.Columns>
                     <DataGridTextColumn Header="Colonna del foglio" Binding="{Binding Header, Mode=OneWay}" Width="220" />
                     <DataGridTextColumn Header="Celle piene" Binding="{Binding Filled, Mode=OneWay}" Width="110" />
@@ -31,7 +32,7 @@
                             </DataTemplate>
                         </DataGridTemplateColumn.CellTemplate>
                     </DataGridTemplateColumn>
-                    <DataGridTextColumn Header="Esempi dal foglio" Binding="{Binding Samples, Mode=OneWay}" Width="*" />
+                    <DataGridTextColumn Header="Esempi dal foglio" Binding="{Binding Samples, Mode=OneWay}" Width="420" />
                 </DataGrid.Columns>
             </DataGrid>
         </StackPanel>
