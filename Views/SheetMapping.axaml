@@ -4,30 +4,35 @@
              x:Class="Alexandreia.SheetMapping">
 
     <Border Classes="card" Margin="0,0,0,10" Padding="12,10">
-        <StackPanel Spacing="8">
+        <!-- La tabella prende l'altezza che le serve, fino a un tetto oltre il quale scorre
+             da sola. Non riempie lo spazio disponibile: con la finestra bassa si schiacciava
+             fino a mostrare la sola riga di intestazione. -->
+        <StackPanel>
 
-            <!-- DockPanel e non StackPanel: il riassunto cambia, e uno StackPanel orizzontale
-                 lo lascerebbe disposto con l'ingombro del testo precedente. -->
-            <DockPanel Name="Head" LastChildFill="True">
+            <DockPanel Name="Head" LastChildFill="True" Margin="0,0,0,8">
                 <ComboBox Name="Tipo" DockPanel.Dock="Left" MinWidth="190" Margin="0,0,12,0" />
                 <TextBlock Name="Nome" DockPanel.Dock="Left" FontWeight="SemiBold"
                            VerticalAlignment="Center" Margin="0,0,12,0" />
                 <TextBlock Name="Riassunto" Classes="muted" VerticalAlignment="Center" />
             </DockPanel>
 
-            <TextBlock Name="Problema" Classes="overdue" TextWrapping="Wrap" IsVisible="False" />
+            <TextBlock Name="Problema" Classes="overdue" TextWrapping="Wrap"
+                       IsVisible="False" Margin="0,0,0,8" />
 
-            <DataGrid Name="Grid" AutoGenerateColumns="False" IsReadOnly="True" MaxHeight="300"
+            <DataGrid Name="Grid" AutoGenerateColumns="False" IsReadOnly="True" MaxHeight="340"
                       IsVisible="False" x:DataType="m:ColumnChoice" GridLinesVisibility="Horizontal"
                       CanUserResizeColumns="True">
                 <DataGrid.Columns>
                     <DataGridTextColumn Header="Colonna del foglio" Binding="{Binding Header, Mode=OneWay}" Width="220" />
                     <DataGridTextColumn Header="Celle piene" Binding="{Binding Filled, Mode=OneWay}" Width="110" />
-                    <DataGridTemplateColumn Header="Va nel campo" Width="180">
+                    <DataGridTemplateColumn Header="Va nel campo" Width="200">
                         <DataGridTemplateColumn.CellTemplate>
                             <DataTemplate x:DataType="m:ColumnChoice">
+                                <!-- Stretch e niente larghezza minima: la tendina segue la colonna
+                                     invece di sbordare quando la si stringe. -->
                                 <ComboBox ItemsSource="{Binding Options}" SelectedItem="{Binding Field, Mode=TwoWay}"
-                                          SelectionChanged="OnFieldChanged" Margin="4,2" MinWidth="160" />
+                                          SelectionChanged="OnFieldChanged" Margin="4,2"
+                                          HorizontalAlignment="Stretch" />
                             </DataTemplate>
                         </DataGridTemplateColumn.CellTemplate>
                     </DataGridTemplateColumn>
