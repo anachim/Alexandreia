@@ -379,6 +379,23 @@ public class UiTests : IDisposable
     }
 
     [AvaloniaFact]
+    public void Il_riquadro_del_file_resta_e_dice_quale_file_e_caricato()
+    {
+        var w = Open();
+        Tab(w, TabDati);
+
+        var zona = Named<Button>(w, "DropZone");
+        Assert.Equal("Scegli un file Excel", Named<TextBlock>(zona, "DropTitle").Text);
+
+        Carica(w, "catalogo.xlsx");
+
+        // Non sparisce: senza, non ci sarebbe più modo di scegliere un altro file.
+        Assert.True(zona.IsVisible);
+        Assert.Equal("catalogo.xlsx", Named<TextBlock>(zona, "DropTitle").Text);
+        Assert.Contains("cambiarlo", Named<TextBlock>(zona, "DropHint").Text!);
+    }
+
+    [AvaloniaFact]
     public void Il_tipo_del_foglio_lo_dice_una_tendina_gia_preselezionata()
     {
         var w = Open();

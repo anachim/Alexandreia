@@ -21,7 +21,7 @@ public partial class ImportView : UserControl, IReloadable
         _db = db;
 
         DoExport.Click += async (_, _) => await SaveExport();
-        Pick.Click += async (_, _) => await PickFile();
+        DropZone.Click += async (_, _) => await PickFile();
         Apply.Click += async (_, _) => await DoImport();
         Replace.IsCheckedChanged += (_, _) => UpdateTotal();
 
@@ -107,15 +107,14 @@ public partial class ImportView : UserControl, IReloadable
         }
         catch (Exception ex)
         {
-            FileName.Text = System.IO.Path.GetFileName(path);
+            Caricato(path);
             Errore.Text = $"Non riesco a leggere il file: {ex.Message}";
             Errore.IsVisible = true;
             Found.IsVisible = Actions.IsVisible = ReplaceBox.IsVisible = false;
             return;
         }
 
-        FileName.Text = System.IO.Path.GetFileName(path);
-        DropZone.IsVisible = false;
+        Caricato(path);
 
         foreach (var foglio in fogli)
         {
@@ -137,6 +136,16 @@ public partial class ImportView : UserControl, IReloadable
     IEnumerable<SheetMapping> Anagrafica => Selected.Where(s => s.Kind == SheetKinds.Members);
     IEnumerable<SheetMapping> Archivio => Selected.Where(s => s.Kind == SheetKinds.Books);
     IEnumerable<SheetMapping> Storico => Selected.Where(s => s.Kind == SheetKinds.History);
+
+    /// <summary>
+    /// Il riquadro resta al suo posto anche dopo: se sparisse, non ci sarebbe più modo
+    /// di scegliere un altro file.
+    /// </summary>
+    void Caricato(string path)
+    {
+        DropTitle.Text = System.IO.Path.GetFileName(path);
+        DropHint.Text = "Premi qui o trascina un altro file per cambiarlo.";
+    }
 
     void UpdateTotal()
     {

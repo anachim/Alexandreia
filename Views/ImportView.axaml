@@ -19,17 +19,14 @@
 
         <TextBlock DockPanel.Dock="Top" Text="PORTA I DATI DENTRO" Classes="h" />
 
-        <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Spacing="10" Margin="0,0,0,10">
-            <Button Name="Pick" Classes="primary" Content="Scegli un file Excel" />
-            <TextBlock Name="FileName" VerticalAlignment="Center" FontWeight="SemiBold" />
-        </StackPanel>
-
-        <Border Name="DropZone" DockPanel.Dock="Top" Classes="drop" Margin="0,0,0,10">
-            <StackPanel Spacing="6" HorizontalAlignment="Center">
-                <TextBlock Text="Trascina qui il file" HorizontalAlignment="Center" FontWeight="SemiBold" />
-                <TextBlock Classes="muted" HorizontalAlignment="Center" Text="Accetta .xlsx e .xls" />
+        <Button Name="DropZone" DockPanel.Dock="Top" Classes="drop" Margin="0,0,0,10">
+            <StackPanel Spacing="4">
+                <TextBlock Name="DropTitle" Text="Scegli un file Excel" FontWeight="SemiBold"
+                           HorizontalAlignment="Center" />
+                <TextBlock Name="DropHint" Classes="muted" HorizontalAlignment="Center"
+                           Text="oppure trascinalo qui.  Accetta .xlsx e .xls" />
             </StackPanel>
-        </Border>
+        </Button>
 
         <TextBlock Name="Found" DockPanel.Dock="Top" Margin="0,0,0,10" IsVisible="False" Classes="muted" />
         <TextBlock Name="Errore" DockPanel.Dock="Top" Classes="overdue" TextWrapping="Wrap"
