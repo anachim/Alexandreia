@@ -73,15 +73,17 @@ mappata sul campo sbagliato su 1400 righe non te ne accorgi finché non è tardi
 battitura tipo «Titollo» non lo indovinerà mai nessuna lista, e infatti si corregge dalla tendina.
 Le colonne non riconosciute vengono **scartate**: si importano solo i campi qui sopra.
 
-Se il file ha **più fogli** li mostra tutti, ognuno con la **sua** mappatura e una casella per
-includerlo o no — lo stesso campo si chiama «Titolo» in un foglio e «Libro» in un altro. Un foglio
-da cui non si ricava niente lo dice e resta fuori, invece di sparire in silenzio.
+Se il file ha **più fogli** li mostra tutti, ognuno con la **sua** mappatura — lo stesso campo si
+chiama «Titolo» in un foglio e «Libro» in un altro.
 
-**Nomi e ordine dei fogli non contano**: quello che conta sono le colonne. Un foglio con
-una colonna *Cognome* è l'anagrafica, uno con *Rientrato il* è lo storico, tutti gli altri sono
-libri — e vengono caricati sempre nell'ordine giusto, qualunque sia la loro posizione nel file. Se
-un'intestazione è scritta in un modo che non riconosce, basta indicarla dalla tendina: il foglio
-cambia tipo da solo.
+**Che cosa c'è in un foglio lo dici tu**, da una tendina con quattro voci: *Libri*, *Storico dei
+prestiti*, *Anagrafica utenti*, *Non caricare*. Arriva già preselezionata con la nostra ipotesi, che
+sul file esportato da qui è sempre giusta — ma la parola finale è dell'utente, perché indovinare
+male e tacere significherebbe creare centinaia di schede doppie senza che nessuno se ne accorga.
+
+Di conseguenza **nomi e ordine dei fogli non contano**, e i tre tipi vengono caricati sempre nella
+sequenza giusta qualunque sia la loro posizione nel file. Un foglio da cui non si ricava niente si
+mette da solo su *Non caricare*, e dice perché.
 
 La casella **«Sostituisci tutto l'archivio»** trasforma il caricamento in un ripristino: cancella
 libri, utenti e storico e rimette quello che c'è nel file. È l'unica operazione irreversibile del

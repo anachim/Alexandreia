@@ -116,7 +116,7 @@ public partial class ImportView : UserControl, IReloadable
 
         foreach (var foglio in fogli)
         {
-            var vista = new SheetMapping(foglio, soloFoglio: fogli.Count == 1);
+            var vista = new SheetMapping(foglio);
             vista.Changed += UpdateTotal;
             _sheets.Add(vista);
             Sheets.Children.Add(vista);
@@ -129,9 +129,10 @@ public partial class ImportView : UserControl, IReloadable
         UpdateTotal();
     }
 
-    IEnumerable<SheetMapping> Anagrafica => Selected.Where(s => s.Report.IsMembers);
-    IEnumerable<SheetMapping> Archivio => Selected.Where(s => !s.Report.IsMembers && !s.Report.IsHistory);
-    IEnumerable<SheetMapping> Storico => Selected.Where(s => s.Report.IsHistory);
+    // Che cosa contiene un foglio lo dice la tendina, non più un'ipotesi sulle colonne.
+    IEnumerable<SheetMapping> Anagrafica => Selected.Where(s => s.Kind == SheetKinds.Members);
+    IEnumerable<SheetMapping> Archivio => Selected.Where(s => s.Kind == SheetKinds.Books);
+    IEnumerable<SheetMapping> Storico => Selected.Where(s => s.Kind == SheetKinds.History);
 
     void UpdateTotal()
     {

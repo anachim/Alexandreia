@@ -104,13 +104,16 @@ nella tendina, non identificatori interni: cambiarli cambia la UI e va fatto lì
 intera). Se aggiungi un campo va in `Synonyms`, in `Export.Headers` e in `Db.ExportRow`,
 altrimenti il giro si rompe a metà.
 
-Il tipo di foglio si riconosce **dalle colonne, non dal nome**:
+Il tipo di foglio **lo sceglie l'utente** da una tendina (`SheetKinds`), non lo deduciamo noi.
+`ImportReport.LooksLikeMembers` e `LooksLikeHistory` guardano le colonne (`FLastName`,
+`FReturnedAt`) ma servono solo a **preselezionare** quella tendina: l'inferenza sbagliata creava
+schede doppie in silenzio, ed è il tipo di errore che nessuno nota. `SheetMapping.Kind` è la
+verità, `ImportView` instrada su quello.
 
-- colonna mappata su `FLastName` → anagrafica (`IsMembers`)
-- colonna mappata su `FReturnedAt` → storico (`IsHistory`)
-- altrimenti → libri
+Quando l'utente sceglie *Anagrafica utenti*, `Plan` viene rieseguito con `asMembers: true`: il
+tipo forza la costruzione delle righe, non lo si legge più dalle colonne.
 
-`Db.ApplyAll` li scrive in quest'ordine, e **l'ordine è il punto**: senza l'anagrafica per prima,
+`Db.ApplyAll` scrive nell'ordine anagrafica → libri → storico, e **l'ordine è il punto**: senza l'anagrafica per prima,
 i nomi in «Prestato a» creerebbero persone nuove col nome intero nel cognome, e il giro
 export → import degraderebbe i dati a ogni passaggio. Il foglio `Utenti` esiste anche per non
 perdere chi al momento non ha niente fuori.

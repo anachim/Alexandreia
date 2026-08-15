@@ -37,17 +37,16 @@ public record ImportReport
     public List<Book> Books => [.. Rows.Select(r => r.Book)];
     public int Loans => Rows.Count(r => r.HasLoan);
 
-    /// <summary>
-    /// Un foglio con una colonna «Cognome» è l'anagrafica: le sue righe creano persone,
-    /// non libri. È il terzo foglio del nostro export, e va caricato per primo.
-    /// </summary>
-    public bool IsMembers => Columns.Any(c => c.MappedTo == Import.FLastName);
+    /// <summary>Se sono state costruite persone invece che libri.</summary>
+    public bool IsMembers { get; init; }
 
     /// <summary>
-    /// Un foglio con una colonna «Rientrato il» è lo storico: le sue righe non creano
-    /// libri, si agganciano a quelli che ci sono già. È il secondo foglio del nostro export.
+    /// Ipotesi sul tipo di foglio, dalle colonne: «Cognome» fa pensare a un'anagrafica,
+    /// «Rientrato il» allo storico. È solo il valore predefinito della tendina — la parola
+    /// finale è dell'utente, perché indovinare male qui crea schede doppie in silenzio.
     /// </summary>
-    public bool IsHistory => !IsMembers && Columns.Any(c => c.MappedTo == Import.FReturnedAt);
+    public bool LooksLikeMembers => Columns.Any(c => c.MappedTo == Import.FLastName);
+    public bool LooksLikeHistory => !LooksLikeMembers && Columns.Any(c => c.MappedTo == Import.FReturnedAt);
 
     /// <summary>Niente da caricare.</summary>
     public bool Empty => Rows.Count == 0 && Members.Count == 0;
@@ -136,10 +135,14 @@ public static class Import
     /// <param name="overrides">
     /// Correzioni manuali intestazione -> campo. Un valore vuoto significa "non importare".
     /// </param>
+    /// <param name="asMembers">
+    /// Forza il foglio a essere (o non essere) un'anagrafica. Null = decidilo dalle colonne.
+    /// </param>
     public static ImportReport Plan(
         IReadOnlyList<object?[]> rows,
         string sheet = "",
-        IReadOnlyDictionary<string, string>? overrides = null)
+        IReadOnlyDictionary<string, string>? overrides = null,
+        bool? asMembers = null)
     {
         var warnings = new List<string>();
         if (rows.Count == 0)
@@ -170,7 +173,9 @@ public static class Import
             map[i] = field;
         }
 
-        var anagrafica = claimed.Contains(FLastName);
+        var anagrafica = asMembers ?? claimed.Contains(FLastName);
+        if (anagrafica && !claimed.Contains(FLastName))
+            warnings.Add("Nessuna colonna riconosciuta come Cognome: indica a mano quale colonna lo contiene.");
         if (!anagrafica && !claimed.Contains(FTitle))
             warnings.Add("Nessuna colonna riconosciuta come Titolo: indica a mano quale colonna lo contiene.");
 
@@ -244,6 +249,7 @@ public static class Import
             Columns = columns,
             Rows = righe,
             Members = persone,
+            IsMembers = anagrafica,
             SkippedNoTitle = skipped,
             Warnings = warnings,
         };

@@ -15,16 +15,30 @@ public class ColumnChoice
 }
 
 /// <summary>
-/// Un foglio del file: il suo riconoscimento colonne, correggibile a mano, e se importarlo.
-/// Ogni foglio ha la sua mappatura, perché lo stesso campo può chiamarsi diversamente
-/// da un foglio all'altro — o essere scritto con un errore di battitura.
+/// Che cosa c'è in un foglio. Lo decide l'utente: indovinarlo dalle colonne funziona quasi
+/// sempre, ma quando sbaglia crea schede doppie in silenzio, e nessuno se ne accorge.
+/// </summary>
+public static class SheetKinds
+{
+    public const string Books = "Libri";
+    public const string History = "Storico dei prestiti";
+    public const string Members = "Anagrafica utenti";
+    public const string Skip = "Non caricare";
+
+    public static readonly string[] All = [Books, History, Members, Skip];
+}
+
+/// <summary>
+/// Un foglio del file: che cosa contiene, il riconoscimento delle colonne correggibile a mano,
+/// e il suo riepilogo. Ogni foglio ha la sua mappatura, perché lo stesso campo può chiamarsi
+/// diversamente da un foglio all'altro — o essere scritto con un errore di battitura.
 /// </summary>
 public partial class SheetMapping : UserControl
 {
     public Import.SheetData Sheet { get; } = new("", []);
     public ImportReport Report { get; private set; } = new();
 
-    /// <summary>Scatta a ogni correzione della mappatura o della casella di inclusione.</summary>
+    /// <summary>Scatta a ogni correzione: tipo del foglio o mappatura di una colonna.</summary>
     public event Action? Changed;
 
     List<ColumnChoice> _choices = [];
@@ -32,18 +46,25 @@ public partial class SheetMapping : UserControl
 
     public SheetMapping() => InitializeComponent();
 
-    public SheetMapping(Import.SheetData sheet, bool soloFoglio) : this()
+    public SheetMapping(Import.SheetData sheet) : this()
     {
         Sheet = sheet;
-        Head.IsVisible = !soloFoglio; // con un foglio solo, niente intestazioni inutili
         Nome.Text = sheet.Name;
+        Tipo.ItemsSource = SheetKinds.All;
 
         Recompute(first: true);
 
-        Includi.IsCheckedChanged += (_, _) => { if (!_loading) Changed?.Invoke(); };
+        Tipo.SelectionChanged += (_, _) =>
+        {
+            if (_loading) return;
+            Recompute(first: false);
+            Changed?.Invoke();
+        };
     }
 
-    public bool Included => Includi.IsChecked == true && !Report.Empty;
+    public string Kind => (string?)Tipo.SelectedItem ?? SheetKinds.Skip;
+
+    public bool Included => Kind != SheetKinds.Skip && !Report.Empty;
 
     /// <summary>Solo i prestiti chiusi: quelli aperti arrivano dal foglio dei libri.</summary>
     public int ChiusiNelloStorico => Report.Rows.Count(r => r.ReturnedAt is not null && r.HasLoan);
@@ -57,9 +78,13 @@ public partial class SheetMapping : UserControl
 
     void Recompute(bool first)
     {
-        var eraVuoto = !first && Report.Empty;
+        Report = Import.Plan(
+            Sheet.Rows,
+            Sheet.Name,
+            first ? null : Overrides(),
+            first ? null : Kind == SheetKinds.Members);
 
-        Report = Import.Plan(Sheet.Rows, Sheet.Name, first ? null : Overrides());
+        _loading = true;
 
         if (first)
         {
@@ -71,34 +96,47 @@ public partial class SheetMapping : UserControl
                 Field = c.MappedTo ?? ColumnChoice.None,
             })];
             Grid.ItemsSource = _choices;
+
+            // La nostra ipotesi è solo il valore di partenza della tendina.
+            Tipo.SelectedItem =
+                Report.Empty ? SheetKinds.Skip
+                : Report.LooksLikeMembers ? SheetKinds.Members
+                : Report.LooksLikeHistory ? SheetKinds.History
+                : SheetKinds.Books;
+        }
+        else if (Report.Empty && Kind != SheetKinds.Skip)
+        {
+            Tipo.SelectedItem = SheetKinds.Skip;
         }
 
-        _loading = true;
-        Includi.IsEnabled = !Report.Empty;
-        // Auto-spunta solo quando un foglio prima inutilizzabile diventa buono grazie a una
-        // correzione: se l'utente l'ha tolta lui, non gliela rimetto.
-        if (Report.Empty) Includi.IsChecked = false;
-        else if (first || eraVuoto) Includi.IsChecked = true;
         _loading = false;
 
+        var righe = Plurale(Report.DataRows, "riga", "righe");
         Riassunto.Text = Report.Empty ? "niente da caricare"
-            : Report.IsMembers
-                ? $"anagrafica: {Report.DataRows} righe → {Report.Members.Count} persone"
-            : Report.IsHistory
-                ? $"storico: {Report.DataRows} righe → {ChiusiNelloStorico} prestiti già rientrati"
-                : $"{Report.DataRows} righe → {Report.Books.Count} libri"
-                  + (Report.SkippedNoTitle > 0 ? $", {Report.SkippedNoTitle} senza titolo" : "");
+            : Kind switch
+            {
+                SheetKinds.Skip => "escluso",
+                SheetKinds.Members => $"{righe} → {Plurale(Report.Members.Count, "persona", "persone")}",
+                SheetKinds.History =>
+                    $"{righe} → {Plurale(ChiusiNelloStorico, "prestito già rientrato", "prestiti già rientrati")}",
+                _ => $"{righe} → {Plurale(Report.Books.Count, "libro", "libri")}"
+                     + (Report.SkippedNoTitle > 0 ? $", {Report.SkippedNoTitle} senza titolo" : ""),
+            };
 
         var messaggi = new List<string>(Report.Warnings);
-        if (Report.Empty)
-            messaggi.Insert(0, $"Da «{Sheet.Name}» non riesco a ricavare niente.");
+        if (Report.Empty) messaggi.Insert(0, $"Da «{Sheet.Name}» non riesco a ricavare niente.");
 
+        // Il perché va detto soprattutto quando il foglio resta fuori da solo: se lo escludiamo
+        // noi e tacciamo, l'utente non sa se è un problema suo o nostro. Se invece è stato lui a
+        // metterlo su «Non caricare», il messaggio è rumore.
         Problema.Text = string.Join("\n", messaggi);
-        Problema.IsVisible = messaggi.Count > 0;
-        Grid.IsVisible = Report.Columns.Count > 0;
+        Problema.IsVisible = messaggi.Count > 0 && (Report.Empty || Kind != SheetKinds.Skip);
+        Grid.IsVisible = Report.Columns.Count > 0 && Kind != SheetKinds.Skip;
     }
 
-    /// <summary>Ogni scelta, anche «(niente)» come stringa vuota, sennò il riconoscimento la rimette.</summary>
+    static string Plurale(int n, string uno, string molti) => $"{n} {(n == 1 ? uno : molti)}";
+
+    /// <summary>Ogni scelta, anche «(non importare)» come stringa vuota, sennò il riconoscimento la rimette.</summary>
     Dictionary<string, string> Overrides() => _choices
         .GroupBy(c => c.Header)
         .ToDictionary(g => g.Key, g => g.First().Field == ColumnChoice.None ? "" : g.First().Field);

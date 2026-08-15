@@ -284,9 +284,9 @@ public class ImportTests
                 var archivio = Import.Plan(fogli[0].Rows, fogli[0].Name);
                 var storico = Import.Plan(fogli[1].Rows, fogli[1].Name);
                 var anagrafica = Import.Plan(fogli[2].Rows, fogli[2].Name);
-                Assert.False(archivio.IsHistory);
-                Assert.True(storico.IsHistory);
-                Assert.True(anagrafica.IsMembers);
+                Assert.False(archivio.LooksLikeHistory);
+                Assert.True(storico.LooksLikeHistory);
+                Assert.True(anagrafica.LooksLikeMembers);
 
                 var c = altro.ApplyAll(archivio.Rows, storico.Rows, anagrafica.Members, replace: true);
                 Assert.Equal(2, c.Books);
@@ -374,10 +374,10 @@ public class ImportTests
                 var anagrafica = Import.Plan(fogli[2].Rows, "Elenco soci");
                 var archivio = Import.Plan(fogli[0].Rows, "Dati");
 
-                Assert.True(storico.IsHistory);
-                Assert.True(anagrafica.IsMembers);
-                Assert.False(archivio.IsHistory);
-                Assert.False(archivio.IsMembers);
+                Assert.True(storico.LooksLikeHistory);
+                Assert.True(anagrafica.LooksLikeMembers);
+                Assert.False(archivio.LooksLikeHistory);
+                Assert.False(archivio.LooksLikeMembers);
 
                 var c = altro.ApplyAll(archivio.Rows, storico.Rows, anagrafica.Members, replace: true);
                 Assert.Equal(2, c.Books);
@@ -402,14 +402,14 @@ public class ImportTests
         };
 
         // «Quando e' tornato» non è in nessuna lista: il foglio sembra un elenco di libri.
-        Assert.False(Import.Plan(rows).IsHistory);
+        Assert.False(Import.Plan(rows).LooksLikeHistory);
 
         // Basta indicarlo a mano dalla tendina e il foglio diventa storico.
         var corretto = Import.Plan(rows, overrides: new Dictionary<string, string>
         {
             ["Quando e' tornato"] = Import.FReturnedAt,
         });
-        Assert.True(corretto.IsHistory);
+        Assert.True(corretto.LooksLikeHistory);
         Assert.Equal(new DateTime(2026, 1, 10), Assert.Single(corretto.Rows).ReturnedAt);
     }
 
@@ -425,7 +425,7 @@ public class ImportTests
                 R("Rossi", "Mario", "già presente"),
                 R("Bianchi", "Anna", null),
             ]);
-            Assert.True(anagrafica.IsMembers);
+            Assert.True(anagrafica.LooksLikeMembers);
 
             var c = db.ApplyAll([], [], anagrafica.Members);
 

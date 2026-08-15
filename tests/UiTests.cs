@@ -263,7 +263,7 @@ public class UiTests : IDisposable
     }
 
     [AvaloniaFact]
-    public void Con_un_foglio_solo_niente_intestazioni_di_foglio()
+    public void Il_tipo_del_foglio_lo_dice_una_tendina_gia_preselezionata()
     {
         var w = Open();
         Tab(w, TabDati);
@@ -271,7 +271,28 @@ public class UiTests : IDisposable
 
         var foglio = Assert.Single(w.GetVisualDescendants().OfType<SheetMapping>());
         Assert.False(Named<TextBlock>(w, "Found").IsVisible);
-        Assert.False(Named<DockPanel>(foglio, "Head").IsVisible);
+
+        // La tendina c'è sempre, anche con un foglio solo: è lì che si corregge se
+        // abbiamo capito male, e indovinare in silenzio crea schede doppie.
+        Assert.Equal(SheetKinds.Books, Named<ComboBox>(foglio, "Tipo").SelectedItem);
+        Assert.Equal(SheetKinds.Books, foglio.Kind);
+        Assert.True(foglio.Included);
+    }
+
+    [AvaloniaFact]
+    public void Mettendo_un_foglio_su_non_caricare_esce_dal_conteggio()
+    {
+        var w = Open();
+        Tab(w, TabDati);
+        Carica(w, "catalogo.xlsx");
+
+        var foglio = Assert.Single(w.GetVisualDescendants().OfType<SheetMapping>());
+        Named<ComboBox>(foglio, "Tipo").SelectedItem = SheetKinds.Skip;
+        Settle();
+
+        Assert.False(foglio.Included);
+        Assert.Equal("Nessun foglio da caricare.", Named<TextBlock>(w, "Summary").Text);
+        Assert.False(Named<Button>(w, "Apply").IsEnabled);
     }
 
     [AvaloniaFact]
@@ -285,9 +306,11 @@ public class UiTests : IDisposable
         Assert.Equal(["Appunti", "Catalogo"], fogli.Select(f => f.Sheet.Name));
         Assert.True(Named<TextBlock>(w, "Found").IsVisible);
 
-        // Da «Appunti» non si ricava niente, e va detto invece che sparire in silenzio.
+        // Da «Appunti» non si ricava niente: esce da solo, ma dicendo perché.
         Assert.True(fogli[0].Report.Empty);
         Assert.False(fogli[0].Included);
+        Assert.Equal(SheetKinds.Skip, fogli[0].Kind);
+        Assert.True(Named<TextBlock>(fogli[0], "Problema").IsVisible);
         Assert.Contains("non riesco a ricavare niente", Named<TextBlock>(fogli[0], "Problema").Text!);
 
         // Nel secondo foglio il titolo si chiama «Libro» e l'autore ha un'intestazione
